@@ -1,0 +1,106 @@
+* { padding:0; margin:0; box-sizing: border-box; }
+
+body { font-size: 12px; font-family: sans-serif; color: white; }
+header { color: darkred; padding: 0.5em; }
+footer { color: #222; padding: 0.5em; }
+ul { list-style: none; }
+
+.clearfix { overflow: auto; }
+.clearfix::after { content: ""; clear: both; display: table; }
+
+.scrollbox {
+  overflow: auto;
+  /* Important for mouse offset calculations! */
+  position: relative;
+}
+
+.col { float: left; }
+
+.w20 { width: 20%; }
+.w60 { width: 60%; }
+
+.stand { opacity: 0.8; }
+
+.draggable {
+  cursor: move; /* fallback if grab cursor is unsupported */
+  cursor: grab;
+  cursor: -moz-grab;
+  cursor: -webkit-grab;
+}
+
+.dragging {
+  cursor: grabbing;
+  cursor: -moz-grabbing;
+  cursor: -webkit-grabbing;
+}
+
+.dropzone { position: relative; }
+
+
+#app { background-color: cadetblue; }
+
+
+#left-sidebar { background-color: purple; }
+
+#left-listbox {
+  max-height: 665px;
+}
+
+#left-listbox .stand {
+  color: darkslateblue;
+  display: inline-block;
+  margin: 3px;
+}
+
+.stand label {
+  display: block;
+  text-align: center;
+}
+
+#content {
+  position: relative;
+}
+
+#content .scrollbox {
+  height: 680px;
+}
+
+#map {
+  background-image: url(../img/terrein-skoon.jpg);
+  background-position: top left;
+  background-repeat: no-repeat;
+  background-size: cover;
+  height: 1131px;
+  width: 1276px;
+}
+
+#map .stand {
+  color: #222;
+  position: absolute;
+}
+
+#zoom-controls {
+  position: absolute;
+  top: 5px;
+  right: 25px;
+  z-index: 10;
+}
+
+#zoom-controls button {
+  display: inline-block;
+  padding: 6px 0;
+  width: 2.5em;
+}
+
+#right-sidebar { background-color: teal; }
+
+
+.Junior4x4      { background: url('../img/32x32/red32.png')       no-repeat; background-size: cover; }
+.Kos4x4         { background: url('../img/32x32/lightblue32.png') no-repeat; background-size: cover; }
+.Snuffel4x4     { background: url('../img/32x32/green32.png')     no-repeat; background-size: cover; }
+.Opvoedkunde4x4 { background: url('../img/32x32/peach32.png')     no-repeat; background-size: cover; }
+.Tema4x4        { background: url('../img/32x32/yellow32.png')    no-repeat; background-size: cover; }
+.Maker4x4       { background: url('../img/32x32/purple32.png')    no-repeat; background-size: cover; }
+.Vermaak4x4     { background: url('../img/32x32/olive32.png')     no-repeat; background-size: cover; }
+.Raadsaal       { background: url('../img/32x32/blue32.png')      no-repeat; background-size: cover; }
+.Borge4x4       { background: url('../img/32x32/grey32.png')      no-repeat; background-size: cover; }

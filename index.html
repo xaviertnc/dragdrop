@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Map Editor</title>
+    <meta charset="utf8">
+    <meta name="viewport" content="width=device-width">
+    <link href="favicon.ico" rel="shortcut icon">
+    <link href="css/style.css" rel="stylesheet">
+  </head>
+  <body>
+    <header>
+      <h1>Drag and Drop</h1>
+    </header>
+    <main id="app" class="clearfix">
+      <div id="left-sidebar" class="col w20">
+        <label>Left Sidebar</label>
+        <div id="left-listbox" class="scrollbox"></div>
+      </div>
+      <div id="content" class="col w60">
+        <div id="zoom-controls">
+          <button type="button" onclick="NM.map.zoomIn()">+</button>
+          <button type="button" onclick="NM.map.zoomOut()">-</button>
+        </div>
+        <div class="scrollbox">
+          <div id="map" class="dropzone"></div>
+        </div>
+      </div>
+      <div id="right-sidebar" class="col w20">
+        <label>Right Sidebar</label>
+      </div>
+    </main>
+    <footer>
+      <div id="debug"></div>
+      &copy; C. Moller - 2018
+    </footer>
+    <script>window.__DEBUG_LEVEL__ = 1;</script>
+    <script>window.console = window.console || { log: function(){} };</script>
+    <script src="js/main.js" type="module"></script>
+  </body>
+</html>
