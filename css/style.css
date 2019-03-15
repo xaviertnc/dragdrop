@@ -37,7 +37,10 @@ ul { list-style: none; }
 .dropzone { position: relative; }
 
 
-#app { background-color: cadetblue; }
+#app {
+  background-color: cadetblue;
+  position: relative;
+}
 
 
 #left-sidebar { background-color: purple; }
@@ -93,6 +96,10 @@ ul { list-style: none; }
 }
 
 #right-sidebar { background-color: teal; }
+
+#boxselect {
+  background-color: mintcream;
+}
 
 
 .Junior4x4      { background: url('../img/32x32/red32.png')       no-repeat; background-size: cover; }

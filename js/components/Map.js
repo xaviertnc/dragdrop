@@ -6,7 +6,10 @@
  */
 
 import { Dropable  } from '../plugins/Dropable.js';
+import { BoxSelect } from '../plugins/BoxSelect.js';
+
 import { Component } from '../classes/Component.js';
+
 import { MapItem   } from '../components/MapItem.js';
 
 const log3 = window.__DEBUG_LEVEL__ > 2 ? console.log : function(){};
@@ -58,6 +61,9 @@ export class Map extends Component {
 
     // Make this map droppable (i.e. a DROPZONE)
     this.addPlugin(Dropable);
+
+    // Add Box Select capability
+    this.addPlugin(BoxSelect);
 
     // Build-out the HTML element
     this.render();
@@ -178,7 +184,7 @@ export class Map extends Component {
     // back to their x1 (base scale) values.
     mapItem.setDataX(dropPos.x - itemLeftOffset, this.scale);
     mapItem.setDataY(dropPos.y - itemTopOffset, this.scale);
-    mapItem.viewScale = this.scale; //dragData.dragImageScale * this.app.unplaced.itemsViewScale;
+    mapItem.viewScale = this.scale;
     mapItem.findPlugin('draggable').reconfigure({
       getDragImageScale: this.getItemDragImageScale
     });
