@@ -167,7 +167,7 @@ export class Map extends Component {
     log4('Map::onDrop(), mapItem1:', mapItem);
     const unplaced = mapItem ? false : true;
     if (unplaced) {
-      mapItem = this.app.unplaced.findChild(dragData.id);
+      mapItem = this.app.leftSidebar.findChild(dragData.id);
     }
     log4('Map::onDrop(), mapItem2:', mapItem);
     const itemLeftOffset = dragData.pointerOffset.x * dragData.dragImageScale;

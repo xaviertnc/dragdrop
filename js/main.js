@@ -3,9 +3,9 @@
 import { mapdata } from './resources/mapdata.js';
 
 
-import { App               } from './components/App.js';
-import { UnplacedItemsList } from './components/UnplacedItemsList.js';
-import { Map               } from './components/Map.js';
+import { App         } from './components/App.js';
+import { LeftSidebar } from './components/LeftSidebar.js';
+import { Map         } from './components/Map.js';
 
 
 const log = window.__DEBUG_LEVEL__ ? console.log : function(){};
@@ -30,9 +30,9 @@ app.map = app.addChild(Map, {
 });
 
 
-app.unplaced = app.addChild(UnplacedItemsList, {
-  id    : 'left-listbox',
-  el    : document.getElementById(('left-listbox')),
+app.leftSidebar = app.addChild(LeftSidebar, {
+  id    : 'left-sidebar',
+  el    : document.getElementById(('left-sidebar')),
   items : mapdata.items.filter(function(item){ return item.group === 1; })
 });
 

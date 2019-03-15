@@ -1,5 +1,5 @@
 /**
- * UnplacedItemsList.js
+ * LeftSidebar.js
  * @author: C. Moller <xavier.tnc@gmail.com>
  * @date: 07 Mar 2019
  *
@@ -11,12 +11,12 @@ import { MapItem } from '../components/MapItem.js';
 const log4 = window.__DEBUG_LEVEL__ > 3 ? console.log : function(){};
 const log5 = window.__DEBUG_LEVEL__ > 4 ? console.log : function(){};
 
-export class UnplacedItemsList extends Component {
+export class LeftSidebar extends Component {
   /**
    * Component constructor.
-   * @constructs UnplacedItemsList
+   * @constructs LeftSidebar
    * @param {Component} parent - Parent component
-   * @param {Object} options - UnplacedItemsList options
+   * @param {Object} options - LeftSidebar options
    */
   constructor(parent, options) {
     super(parent, options);
@@ -69,7 +69,7 @@ export class UnplacedItemsList extends Component {
     // Build-out the HTML element
     this.render();
 
-    log5('UnplacedItemsList::new(),', this);
+    log5('LeftSidebar::new(),', this);
   }
 
 
@@ -120,11 +120,19 @@ export class UnplacedItemsList extends Component {
    * Render component inner HTML
    */
   render() {
+    const label = document.createElement('label');
+    label.innerHTML = 'Left Sidebar';
+    const listbox = document.createElement('div');
+    listbox.id = 'left-listbox';
+    listbox.className = 'scrollbox';
+    this.elListbox = listbox;
+    this.el.append(label);
+    this.el.append(listbox);
     for (let i=0; i < this.children.length; i++) {
       let child = this.children[i];
-      child.mount();
+      child.mount(listbox);
     }
-    log4('UnplacedItemsList::render(), el:', this.el);
+    log4('LeftSidebar::render(), el:', this.el);
   }
 
 
@@ -132,7 +140,7 @@ export class UnplacedItemsList extends Component {
    * Mount component content
    */
   mount() {
-    throw new Error('UnplacedItemsList::mount(), Not required. Part of page template!');
+    throw new Error('LeftSidebar::mount(), Not required. Part of page template!');
   }
 
 }
