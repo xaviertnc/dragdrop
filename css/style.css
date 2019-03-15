@@ -21,12 +21,12 @@ ul { list-style: none; }
 
 .stand { opacity: 0.8; }
 
-.draggable {
+.draggable > label {
   cursor: move; /* fallback if grab cursor is unsupported */
   cursor: grab;
   cursor: -moz-grab;
   cursor: -webkit-grab;
-}
+ }
 
 .dragging {
   cursor: grabbing;

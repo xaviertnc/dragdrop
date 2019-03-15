@@ -230,6 +230,7 @@ export class Draggable extends Plugin {
   attach() {
     // log('Draggable::attach()');
     const drgObj = this.hostObj;
+    drgObj.el.classList.add('draggable');
     drgObj.el.setAttribute('draggable', true);
     drgObj.eventListners.onDragStart = this.onDragStart.bind(this);
     drgObj.eventListners.onDrag = this.onDrag.bind(this);
