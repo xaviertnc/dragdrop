@@ -5,6 +5,7 @@
  *
  */
 
+const log = window.__DEBUG_LEVEL__ ? console.log : function(){};
 const log4 = window.__DEBUG_LEVEL__ > 4 ? console.log : function(){};
 let nextId = 1;
 
@@ -58,11 +59,18 @@ export class Component {
     this.children = [];
 
     /**
+     * The part of a component's auto-id BEFORE the number.
+     * @property idPrefix
+     * @type {String}
+     */
+    this.idPrefix =  options.idPrefix || 'comp';
+
+    /**
      * Component id / name
      * @property id
      * @type {String}
      */
-    this.id = options.id || 'comp' + nextId++;
+    this.id = options.id || this.getNextId();
 
     /**
      * Component DOM element
@@ -76,6 +84,15 @@ export class Component {
 
 
   /**
+   * Next id generator
+   * @return {String} E.g. comp1, item42, group3 etc.
+   */
+  getNextId() {
+    return this.idPrefix + nextId++;
+  }
+
+
+  /**
    * Adds plugin to this component instance.
    * @param {Plugin} PluginToAdd  - Plugin that you want to attach to this component
    * @param {Object} options - Plugin configuration options
@@ -84,10 +101,13 @@ export class Component {
    */
   addPlugin(PluginToAdd, options) {
     let plugin;
-    const matchingPlugins = this.plugins.map(function(activePlugin) {
+    const matchingPlugins = this.plugins.filter(function(activePlugin) {
       return activePlugin.constructor === PluginToAdd;
     });
-    if (matchingPlugins.length) { plugin = matchingPlugins.pop(); }
+    // log('matchingPlugins =', matchingPlugins);
+    if (matchingPlugins.length) {
+      plugin = matchingPlugins.pop();
+    }
     else {
       plugin = new PluginToAdd(this, options);
       this.plugins.push(plugin);
