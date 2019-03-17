@@ -95,7 +95,7 @@ export class Dropable extends Plugin {
 
   onDragOver(event) {
     log4('Dropable.onDragOver()');
-    event.preventDefault();
+    event.preventDefault(); // Prevent blocking dropzone!
     return false;
   }
 
@@ -123,14 +123,13 @@ export class Dropable extends Plugin {
         log4('Dropable.onDrop(), dropLocalPos:', dropLocalPos);
         dropZoneObj.onDrop(event, dropLocalPos);
       }
-      event.preventDefault(); // Prevent blocking dropzone!
+      event.preventDefault(); // Prevent default "link" behaviour!
       return false;
     }
   }
 
 
   attach() {
-    // log('Dropable::attach()');
     const dropObj = this.hostObj;
     dropObj.eventListners.onDragEnter = this.onDragEnter.bind(this);
     dropObj.eventListners.onDragOver = this.onDragOver.bind(this);

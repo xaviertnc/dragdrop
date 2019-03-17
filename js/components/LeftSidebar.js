@@ -103,14 +103,13 @@ export class LeftSidebar extends Component {
    */
   addMapItem(mapItemData) {
     const itemOptions = {
-      id        : 'item' + mapItemData.id,
-      viewScale : this.itemsViewScale,
-      data      : mapItemData,
-      draggable : true,
-      drag      : { // Configure Draggable plugin on this item...
+      id: 'item' + mapItemData.id,
+      viewScale: this.itemsViewScale,
+      draggable: { // Draggable plugin config...
         getDragImageScale   : this.getItemDragImageScale,
         getDragImageElement : this.getItemDragImageElement
-      }
+      },
+      data: mapItemData
     };
     this.addChild(MapItem, itemOptions);
   }

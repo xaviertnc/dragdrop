@@ -5,9 +5,11 @@
  *
  */
 
+import { Groupable } from '../plugins/Groupable.js';
 import { Draggable } from '../plugins/Draggable.js';
 import { Component } from '../classes/Component.js';
 
+const log  = window.__DEBUG_LEVEL__     ? console.log : function(){};
 const log4 = window.__DEBUG_LEVEL__ > 3 ? console.log : function(){};
 
 /**
@@ -47,16 +49,15 @@ export class MapItem extends Component {
      */
     this.app = this.rootParent;
 
-    /**
-     * Item DRAGGABLE STATE
-     * @property draggable
-     * @type {Boolean}
-     */
-    this.draggable = options.draggable ? true : false;
+    // Make this item DRAGGABLE!
+    if (options.draggable) {
+      this.addPlugin(Draggable, options.draggable);
+    }
 
-    if (this.draggable) {
-      // Make this component DRAGGABLE!
-      this.addPlugin(Draggable, options.drag);
+    // Make this item GROUPABLE!
+    if (options.groupsManager) {
+      this.groupsManager = options.groupsManager;
+      this.addPlugin(Groupable);
     }
 
     // Construct / build-out the element HTML
@@ -76,6 +77,12 @@ export class MapItem extends Component {
   setDataY(dispY, scale) { this.data.y = dispY / (scale || this.viewScale); }
 
 
+  getGroup() {
+    log4('MapItem::getGroup(), this:', this);
+    return this.data.group ? this.groupsManager.findGroup(this.data.group) : null;
+  }
+
+
   /**
    * Clone, scale and style this item's DOM element to make a drag ghost/image element.
    * @param  {Float} scale The scale of the clone relative to the original element
@@ -93,6 +100,37 @@ export class MapItem extends Component {
   }
 
 
+  onSelect(event) {
+    log4('MapItem::onSelect(),', event);
+    this.el.classList.add('selected');
+    this.selected = true;
+  }
+
+
+  onUnselect(event) {
+    log('MapItem::onUnselect(),', event);
+    this.el.classList.remove('selected');
+    this.selected = false;
+  }
+
+
+  onClick(event) {
+    const SHIFT = this.app.keyboard.get('SHIFT');
+    log('MapItem::onClick(), item.selected:', this.selected, ', SHIFT.isDown:', SHIFT.isDown);
+    if (SHIFT.isDown) {
+      if (this.selected) {
+        if (this.group) { this.group.unselectItems(this, event); }
+        else { this.groupsManager.removeSelectedItem(this, event); }
+      }
+      else {
+        if (this.group) { this.group.selectItems(this, event); }
+        else { this.groupsManager.addSelectedItem(this, event); }
+      }
+    }
+    return true;
+  }
+
+
   render() {
     const vx = this.getViewX();
     const vy = this.getViewY();
@@ -101,7 +139,7 @@ export class MapItem extends Component {
     const label = document.createElement('label');
     label.innerHTML = this.data.id;
     label.style = `line-height:${vh}px;font-size:${Math.min(vh/2, 14)}px`;
-    this.el.className = 'stand ' + this.data.type;
+    this.el.classList.add('stand', this.data.type);
     this.el.style = `left:${vx}px;top:${vy}px;width:${vw}px;height:${vh}px;`;
     this.el.append(label);
     return this.el;
@@ -118,8 +156,9 @@ export class MapItem extends Component {
   }
 
 
-  mount() {
-    this.parent.el.append(this.el);
+  mount(mountElement) {
+    mountElement = mountElement || this.parent.el;
+    mountElement.append(this.el);
   }
 
 }

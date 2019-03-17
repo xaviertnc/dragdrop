@@ -21,12 +21,16 @@ ul { list-style: none; }
 
 .stand { opacity: 0.8; }
 
-.draggable > label {
+.draggable {
   cursor: move; /* fallback if grab cursor is unsupported */
   cursor: grab;
   cursor: -moz-grab;
   cursor: -webkit-grab;
- }
+}
+
+.draggable > label {
+  pointer-events: none;
+}
 
 .dragging {
   cursor: grabbing;
@@ -60,6 +64,7 @@ ul { list-style: none; }
   text-align: center;
 }
 
+
 #content {
   position: relative;
 }
@@ -82,6 +87,10 @@ ul { list-style: none; }
   position: absolute;
 }
 
+#map .selected {
+  border: 1px solid red;
+}
+
 #zoom-controls {
   position: absolute;
   top: 5px;
@@ -98,7 +107,7 @@ ul { list-style: none; }
 #right-sidebar { background-color: teal; }
 
 #boxselect {
-  background-color: mintcream;
+  background-color: yellow;
 }
 
 

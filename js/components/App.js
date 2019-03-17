@@ -8,7 +8,8 @@
 import { Keyboard  } from '../plugins/Keyboard.js';
 import { Component } from '../classes/Component.js';
 
-const log2 = window.__DEBUG_LEVEL__ > 1 ? console.log : function(){};
+// const log  = window.__DEBUG_LEVEL__     ? console.log : function(){};
+// const log2 = window.__DEBUG_LEVEL__ > 1 ? console.log : function(){};
 const log4 = window.__DEBUG_LEVEL__ > 3 ? console.log : function(){};
 
 /**
@@ -32,19 +33,8 @@ export class App extends Component {
     log4('App::init()');
     this.elDebug = document.getElementById('debug');
     this.eventListners.onMouseMove = this.onMouseMove.bind(this);
-    this.eventListners.onDocumentClick = this.onDocumentClick.bind(this);
     document.addEventListener('mousemove', this.eventListners.onMouseMove);
-    document.addEventListener('click', this.eventListners.onDocumentClick);
     this.addPlugin(Keyboard);
-  }
-
-
-  /**
-   * Document click event listner
-   * @param {Object} event - DOM generated event object
-   */
-  onDocumentClick(event) {
-    log2('App::onDocumentClick(), event:', event);
   }
 
 

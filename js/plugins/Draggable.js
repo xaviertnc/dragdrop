@@ -41,23 +41,19 @@ export class Draggable extends Plugin {
      */
     this.dragImageScale = options.dragImageScale || 1;
 
-    if (options.getDragImageScale) {
-      /**
-       * Custom / dynamic ghost image scale function.
-       * @method getDragImageScale
-       * @return {Float} Ghost image scale relative to the drag element size.
-       */
-      this.getDragImageScale = options.getDragImageScale;
-    }
+    /**
+     * Custom / dynamic ghost image scale function.
+     * @method getDragImageScale
+     * @return {Float} Ghost image scale relative to the drag element size.
+     */
+    this.getDragImageScale = options.getDragImageScale;
 
-    if (options.getDragImageElement) {
-      /**
-       * Custom / dynamic ghost image element generator function.
-       * @method getDragImageElement
-       * @return {HTMLEntity} Drag ghost image element.
-       */
-      this.getDragImageElement = options.getDragImageElement;
-    }
+    /**
+     * Custom / dynamic ghost image element generator function.
+     * @method getDragImageElement
+     * @return {HTMLEntity} Drag ghost image element.
+     */
+    this.getDragImageElement = options.getDragImageElement;
 
     /**
      * Confirms that we want to create a drag "ghost" image
@@ -68,6 +64,13 @@ export class Draggable extends Plugin {
     this.useCustomDragImage = options.useCustomDragImage
       || this.getDragImageElement
       || this.dragImageScale;
+
+    /**
+     * Dynamic "Can Drag" function.
+     * @property canDrag
+     * @type {Function}
+     */
+    this.canDrag = options.canDrag;
   }
 
 
@@ -177,6 +180,7 @@ export class Draggable extends Plugin {
   onDragStart(event) {
     log2('Draggable.onDragStart(),', event);
     const drgObj = this.hostObj;
+    if (this.canDrag && !this.canDrag(event)) { return; }
     const dragObjId = this._getDragObjId(drgObj);
     const dragObjData = this._getDragObjData(drgObj);
     const dragImageScale = this._getDragImageScale();

@@ -5,13 +5,16 @@
  *
  */
 
-import { Dropable  } from '../plugins/Dropable.js';
-import { BoxSelect } from '../plugins/BoxSelect.js';
+import { Dropable      } from '../plugins/Dropable.js';
+import { BoxSelect     } from '../plugins/BoxSelect.js';
+import { Groupable     } from '../plugins/Groupable.js';
+import { GroupsManager } from '../plugins/GroupsManager.js';
 
 import { Component } from '../classes/Component.js';
 
 import { MapItem   } from '../components/MapItem.js';
 
+// const log  = window.__DEBUG_LEVEL__     ? console.log : function(){};
 const log3 = window.__DEBUG_LEVEL__ > 2 ? console.log : function(){};
 const log4 = window.__DEBUG_LEVEL__ > 3 ? console.log : function(){};
 const log5 = window.__DEBUG_LEVEL__ > 4 ? console.log : function(){};
@@ -54,16 +57,19 @@ export class Map extends Component {
      */
     this.app = this.rootParent;
 
-    // Create and Add items as child components
-    for (let i in  options.items || []) {
-      this.addMapItem(options.items[i]);
-    }
-
     // Make this map droppable (i.e. a DROPZONE)
     this.addPlugin(Dropable);
 
     // Add Box Select capability
     this.addPlugin(BoxSelect);
+
+    // Add Groups Management capability
+    this.addPlugin(GroupsManager);
+
+    // Create and Add items as child components
+    for (let i in  options.items || []) {
+      this.addMapItem(options.items[i]);
+    }
 
     // Build-out the HTML element
     this.render();
@@ -105,16 +111,24 @@ export class Map extends Component {
   }
 
 
+  canDragItem() {
+    const canDrag = ! this.app.keyboard.get('SHIFT').isDown;
+    log4('Map::canDrag(), ', canDrag);
+    return canDrag;
+  }
+
+
   /**
    * Create a new MapItem from "mapItemData" and add as child
    * @param {Object} mapItemData
    */
   addMapItem(mapItemData) {
     let options = {};
-    options.draggable = true;
     options.data = mapItemData;
     options.viewScale = this.scale;
     options.id = 'item' + mapItemData.id;
+    options.groupsManager = this.groupsManager;
+    options.draggable = { canDrag: this.canDragItem.bind(this) };
     return this.addChild(MapItem, options);
   }
 
@@ -185,10 +199,13 @@ export class Map extends Component {
     mapItem.setDataX(dropPos.x - itemLeftOffset, this.scale);
     mapItem.setDataY(dropPos.y - itemTopOffset, this.scale);
     mapItem.viewScale = this.scale;
-    mapItem.findPlugin('draggable').reconfigure({
-      getDragImageScale: this.getItemDragImageScale
-    });
     if (unplaced) {
+      mapItem.groupsManager = this.groupsManager;
+      mapItem.addPlugin(Groupable);
+      mapItem.findPlugin('draggable').reconfigure({
+        getDragImageScale: this.getItemDragImageScale,
+        canDrag: this.canDragItem.bind(this)
+      });
       mapItem.parent.removeChild(mapItem);
       mapItem.parent = this;
       this.children.push(mapItem);

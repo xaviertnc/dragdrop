@@ -9,6 +9,7 @@ import { Map         } from './components/Map.js';
 
 
 const log = window.__DEBUG_LEVEL__ ? console.log : function(){};
+const log4 = window.__DEBUG_LEVEL__ > 3 ? console.log : function(){};
 
 
 const app = new App({
@@ -20,7 +21,7 @@ const app = new App({
 app.mapdata = mapdata;
 
 
-app.keyboard.add('SHIFT', 16, ()=>log('SHIFT PRESSED'), ()=>log('SHIFT RELEASED'));
+app.keyboard.add('SHIFT', 16, ()=>log4('SHIFT PRESSED'), ()=>log4('SHIFT RELEASED'));
 
 
 app.map = app.addChild(Map, {

@@ -7,7 +7,7 @@
 
 import { Plugin } from '../classes/Plugin.js';
 
-const log = window.__DEBUG_LEVEL__ ? console.log : function(){};
+// const log = window.__DEBUG_LEVEL__ ? console.log : function(){};
 const log4 = window.__DEBUG_LEVEL__ > 3 ? console.log : function(){};
 
 /**
@@ -26,8 +26,9 @@ export class BoxSelect extends Plugin {
     super('boxselect', hostObj, options);
     this.selecting = false;
     this.slectedItems = [];
-    this.el = this.render();
-    this.localPos = {};
+    this.el = this.renderBox();
+    this.hideBox();
+    this.hostObj.el.append(this.el);
   }
 
 
@@ -81,35 +82,8 @@ export class BoxSelect extends Plugin {
   }
 
 
-  render() {
-    const el = document.createElement('div');
-    el.style='border:1px dashed black;opacity:0.34;position:absolute;z-index:99';
-    el.id = 'boxselect';
-    return el;
-  }
+  getSelectedItems() {
 
-
-  mount(pointerLocalPos) {
-    this.el.style.width = '3px';
-    this.el.style.height = '3px';
-    this.localPos = pointerLocalPos;
-    this.el.style.top = pointerLocalPos.y + 'px';
-    this.el.style.left = pointerLocalPos.x + 'px';
-    this.hostObj.el.append(this.el);
-    log4('BoxSelect::mount(x,y),', pointerLocalPos);
-  }
-
-
-  dismount() {
-    this.el.parentElement.removeChild(this.el);
-  }
-
-
-  update(pointerLocalPos) {
-    const w = pointerLocalPos.x - this.localPos.x;
-    const h = pointerLocalPos.y - this.localPos.y;
-    this.el.style.width = w + 'px';
-    this.el.style.height = h + 'px';
   }
 
 
@@ -118,24 +92,57 @@ export class BoxSelect extends Plugin {
   }
 
 
-  getSelectedItems() {
+  renderBox() {
+    const el = document.createElement('div');
+    el.style='border:1px dashed black;opacity:0.34;position:absolute;z-index:99';
+    el.id = 'boxselect';
+    return el;
+  }
 
+
+  moveBoxTo(pointerLocalPos) {
+    this.localPos = pointerLocalPos;
+    this.el.style.top = pointerLocalPos.y + 'px';
+    this.el.style.left = pointerLocalPos.x + 'px';
+  }
+
+
+  hideBox() {
+    log4('BoxSelect::hide()');
+    this.el.style.width = '3px';
+    this.el.style.height = '3px';
+    this.moveBoxTo({ x: -9999, y: 0 });
+    this.visible = false;
+  }
+
+
+  resizeBox(pointerLocalPos) {
+    const w = pointerLocalPos.x - this.localPos.x;
+    const h = pointerLocalPos.y - this.localPos.y;
+    this.el.style.width = w + 'px';
+    this.el.style.height = h + 'px';
   }
 
 
   onMouseDown(event) {
     log4('BoxSelect::onMouseDown(),', event);
     if (this.getKey('SHIFT').isDown) {
+      // PLEASE NOTE: NOT "showing" the select box here fixed a
+      // difficult issue with the Groupable plugin's "onclick" NOT firing!
       this.selecting = true;
-      this.mount(this.getHostLocalPos(event));
     }
   }
 
 
   onMouseMove(event) {
     if (this.selecting) {
-      log4('BoxSelect::onMouseMove(),', event);
-      this.update(this.getHostLocalPos(event));
+      // log4('BoxSelect::onMouseMove(),', event);
+      if (this.visible) {
+        this.resizeBox(this.getHostLocalPos(event));
+      } else {
+        this.moveBoxTo(this.getHostLocalPos(event));
+        this.visible = true;
+      }
     }
   }
 
@@ -144,7 +151,7 @@ export class BoxSelect extends Plugin {
     log4('BoxSelect::onMouseUp(),', event);
     if (this.selecting) {
       this.selecting = false;
-      this.dismount();
+      if (this.visible) { this.hideBox(); }
     }
   }
 
