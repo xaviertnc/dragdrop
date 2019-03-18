@@ -14,7 +14,7 @@ import { Component } from '../classes/Component.js';
 
 import { MapItem   } from '../components/MapItem.js';
 
-// const log  = window.__DEBUG_LEVEL__     ? console.log : function(){};
+const log  = window.__DEBUG_LEVEL__     ? console.log : function(){};
 const log3 = window.__DEBUG_LEVEL__ > 2 ? console.log : function(){};
 const log4 = window.__DEBUG_LEVEL__ > 3 ? console.log : function(){};
 const log5 = window.__DEBUG_LEVEL__ > 4 ? console.log : function(){};
@@ -218,9 +218,32 @@ export class Map extends Component {
   }
 
 
-  // canDrop(event) {
-  //   log('Map::canDrop(),', event);
-  //   return true;
-  // }
+  canBoxSelect(event) {
+    log4('Map::canBoxSelect(), event:', event);
+    return this.app.keyboard.get('SHIFT').isDown;
+  }
+
+
+  onBoxSelect(selectBox, event) {
+    // log('Map::onBoxSelect(), selectBox:', selectBox, event);
+    const map = this;
+    map.groupsManager.preventClear = true;
+    map.children.forEach(function(child) {
+      if (child.intersectsWith(selectBox)) {
+        map.groupsManager.addSelectedItem(child, event);
+      }
+    });
+  }
+
+
+  onDocumentClick(event) {
+    if (event.target.id === 'map') {
+      if (this.groupsManager.preventClear) {
+        this.groupsManager.preventClear = false;
+      } else {
+        this.groupsManager.clearSelection();
+      }
+    }
+  }
 
 }

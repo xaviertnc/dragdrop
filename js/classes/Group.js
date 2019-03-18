@@ -5,7 +5,7 @@
  *
  */
 
-const log = window.__DEBUG_LEVEL__ ? console.log : function(){};
+// const log = window.__DEBUG_LEVEL__ ? console.log : function(){};
 const log4 = window.__DEBUG_LEVEL__ > 3 ? console.log : function(){};
 
 /**
@@ -80,19 +80,19 @@ export class Group {
 
 
   selectItems(event) {
-    log('Group::selectItems()');
+    log4('Group::selectItems()');
     this.items.forEach(item => this.selectItem(item, event));
   }
 
 
   unselectItems(event) {
-    log('Group::unselectItems()');
+    log4('Group::unselectItems()');
     this.items.forEach(item => this.unselectItem(item, event));
   }
 
 
   clear() {
-    log('Group::clear()');
+    log4('Group::clear()');
     this.items = [];
   }
 

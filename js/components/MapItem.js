@@ -108,7 +108,7 @@ export class MapItem extends Component {
 
 
   onUnselect(event) {
-    log('MapItem::onUnselect(),', event);
+    log4('MapItem::onUnselect(),', event);
     this.el.classList.remove('selected');
     this.selected = false;
   }
@@ -116,7 +116,7 @@ export class MapItem extends Component {
 
   onClick(event) {
     const SHIFT = this.app.keyboard.get('SHIFT');
-    log('MapItem::onClick(), item.selected:', this.selected, ', SHIFT.isDown:', SHIFT.isDown);
+    log4('MapItem::onClick(), item.selected:', this.selected, ', SHIFT.isDown:', SHIFT.isDown);
     if (SHIFT.isDown) {
       if (this.selected) {
         if (this.group) { this.group.unselectItems(this, event); }

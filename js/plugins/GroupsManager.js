@@ -63,11 +63,16 @@ export class GroupsManager extends Plugin {
   }
 
 
+  clearSelection() {
+    this.selectedItems.unselectItems();
+    this.selectedItems.clear();
+  }
+
+
   onDocumentClick(event) {
-    if (event.target.id === 'map') {
-      log('GroupsManager::onDocumentClick()');
-      this.selectedItems.unselectItems();
-      this.selectedItems.clear();
+    log4('GroupsManager::onDocumentClick()');
+    if (this.hostObj.onDocumentClick) {
+      return this.hostObj.onDocumentClick(event);
     }
   }
 

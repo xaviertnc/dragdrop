@@ -7,7 +7,7 @@
 
 import { Plugin } from '../classes/Plugin.js';
 
-// const log = window.__DEBUG_LEVEL__ ? console.log : function(){};
+const log = window.__DEBUG_LEVEL__ ? console.log : function(){};
 const log4 = window.__DEBUG_LEVEL__ > 3 ? console.log : function(){};
 
 /**
@@ -16,12 +16,7 @@ const log4 = window.__DEBUG_LEVEL__ > 3 ? console.log : function(){};
  * @module BoxSelect
  */
 export class BoxSelect extends Plugin {
-  /**
-   * Plugin constructor.
-   * @constructs BoxSelect
-   * @param {Component} hostObj Host component to apply this plugin to.
-   * @param {Object} options Plugin initial configuration.
-   */
+
   constructor(hostObj, options) {
     super('boxselect', hostObj, options);
     this.selecting = false;
@@ -73,22 +68,12 @@ export class BoxSelect extends Plugin {
   }
 
 
-  getHostLocalPos(event) {
+  getEventLocalPos(globalPos) {
     const hostGlobalPos = this.getElementGlobalPos(this.hostObj.el);
     return {
-      x: event.clientX - hostGlobalPos.x,
-      y: event.clientY - hostGlobalPos.y
+      x: globalPos.x - hostGlobalPos.x,
+      y: globalPos.y - hostGlobalPos.y
     };
-  }
-
-
-  getSelectedItems() {
-
-  }
-
-
-  getKey(key) {
-    return this.hostObj.app.keyboard.get(key);
   }
 
 
@@ -100,10 +85,11 @@ export class BoxSelect extends Plugin {
   }
 
 
-  moveBoxTo(pointerLocalPos) {
-    this.localPos = pointerLocalPos;
-    this.el.style.top = pointerLocalPos.y + 'px';
-    this.el.style.left = pointerLocalPos.x + 'px';
+  moveBoxTo(pointerGlobalPos) {
+    this.globalPos = pointerGlobalPos;
+    this.localPos = this.getEventLocalPos(pointerGlobalPos);
+    this.el.style.top = this.localPos.y + 'px';
+    this.el.style.left = this.localPos.x + 'px';
   }
 
 
@@ -112,25 +98,31 @@ export class BoxSelect extends Plugin {
     this.el.style.width = '3px';
     this.el.style.height = '3px';
     this.moveBoxTo({ x: -9999, y: 0 });
+    this.localPos = {};
+    this.globalPos = {};
     this.visible = false;
+    this.height = 1;
+    this.width = 1;
   }
 
 
-  resizeBox(pointerLocalPos) {
-    const w = pointerLocalPos.x - this.localPos.x;
-    const h = pointerLocalPos.y - this.localPos.y;
-    this.el.style.width = w + 'px';
-    this.el.style.height = h + 'px';
+  resizeBox(pointerGlobalPos) {
+    const pointerLocalPos = this.getEventLocalPos(pointerGlobalPos);
+    this.width = pointerLocalPos.x - this.localPos.x;
+    this.height = pointerLocalPos.y - this.localPos.y;
+    this.el.style.width = this.width + 'px';
+    this.el.style.height = this.height + 'px';
   }
 
 
   onMouseDown(event) {
     log4('BoxSelect::onMouseDown(),', event);
-    if (this.getKey('SHIFT').isDown) {
-      // PLEASE NOTE: NOT "showing" the select box here fixed a
-      // difficult issue with the Groupable plugin's "onclick" NOT firing!
-      this.selecting = true;
-    }
+    // PLEASE NOTE: If we try to "show / move" the box in this method, some crutial
+    // subsequent events get cancelled! This causes difficult to resolve issues
+    // with firing "onclick" events added by other plugins.
+    this.selecting = this.hostObj.canBoxSelect
+      ? this.hostObj.canBoxSelect(event)
+      : true;
   }
 
 
@@ -138,9 +130,9 @@ export class BoxSelect extends Plugin {
     if (this.selecting) {
       // log4('BoxSelect::onMouseMove(),', event);
       if (this.visible) {
-        this.resizeBox(this.getHostLocalPos(event));
+        this.resizeBox({ x: event.clientX, y: event.clientY });
       } else {
-        this.moveBoxTo(this.getHostLocalPos(event));
+        this.moveBoxTo({ x: event.clientX, y: event.clientY });
         this.visible = true;
       }
     }
@@ -151,7 +143,18 @@ export class BoxSelect extends Plugin {
     log4('BoxSelect::onMouseUp(),', event);
     if (this.selecting) {
       this.selecting = false;
-      if (this.visible) { this.hideBox(); }
+      if (this.visible) {
+        if (this.hostObj.onBoxSelect) {
+          const selectBox = {
+            x: this.globalPos.x,
+            y: this.globalPos.y,
+            width: this.width,
+            height: this.height
+          };
+          this.hostObj.onBoxSelect(selectBox, event);
+        }
+        this.hideBox();
+      }
     }
   }
 
