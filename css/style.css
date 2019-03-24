@@ -4,6 +4,10 @@ body { font-size: 12px; font-family: sans-serif; color: white; }
 header { color: darkred; padding: 0.5em; }
 footer { color: #222; padding: 0.5em; }
 ul { list-style: none; }
+h3 {
+  padding: 3px 5px;
+  font-weight: normal;
+}
 
 .clearfix { overflow: auto; }
 .clearfix::after { content: ""; clear: both; display: table; }
@@ -70,7 +74,7 @@ ul { list-style: none; }
 }
 
 #content .scrollbox {
-  height: 680px;
+  height: 688px;
 }
 
 #map {
@@ -104,7 +108,13 @@ ul { list-style: none; }
   width: 2.5em;
 }
 
-#right-sidebar { background-color: teal; }
+#group-controls button {
+  margin: 0.3em 0.3em 0;
+  padding: 3px 5px;
+}
+
+#left-sidebar h3 { background-color: mediumvioletred; }
+#right-sidebar h3 { background-color: teal; }
 
 #boxselect {
   background-color: yellow;

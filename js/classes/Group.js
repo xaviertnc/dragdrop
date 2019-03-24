@@ -5,7 +5,7 @@
  *
  */
 
-// const log = window.__DEBUG_LEVEL__ ? console.log : function(){};
+const log = window.__DEBUG_LEVEL__ ? console.log : function(){};
 const log4 = window.__DEBUG_LEVEL__ > 3 ? console.log : function(){};
 
 /**
@@ -23,14 +23,22 @@ export class Group {
   constructor(id, options = {}) {
     this.id = id;
     this.items = options.items || [];
-    log4('Group::new()');
+    this.isMetaGroup = options.isMetaGroup;
+    if ( ! this.isMetaGroup && this.items.length) {
+      const thisGroup = this;
+      this.items.forEach(function(item) { item.group = thisGroup; });
+    }
+    log('Group::new(), id:', id);
   }
 
 
   addItem(item) {
     log4('Group::addItem(), item:', item);
     const index = this.items.indexOf(item);
-    if (index < 0) { this.items.push(item); }
+    if (index < 0) {
+      if ( ! this.isMetaGroup) { item.group = this; }
+      this.items.push(item);
+    }
     return this;
   }
 
@@ -38,7 +46,10 @@ export class Group {
   removeItem(item) {
     log4('Group::removeItem(), item:', item);
     const index = this.items.indexOf(item);
-    if (index >= 0) { this.items.splice(index, 1); }
+    if (index >= 0) {
+      this.items[index].group = null;
+      this.items.splice(index, 1);
+    }
     return item;
   }
 

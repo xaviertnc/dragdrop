@@ -118,6 +118,12 @@ export class Map extends Component {
   }
 
 
+  canBoxSelect(event) {
+    log4('Map::canBoxSelect(), event:', event);
+    return this.app.keyboard.get('SHIFT').isDown;
+  }
+
+
   /**
    * Create a new MapItem from "mapItemData" and add as child
    * @param {Object} mapItemData
@@ -130,6 +136,17 @@ export class Map extends Component {
     options.groupsManager = this.groupsManager;
     options.draggable = { canDrag: this.canDragItem.bind(this) };
     return this.addChild(MapItem, options);
+  }
+
+
+  groupSelectedItems() {
+    log('Map::groupSelectedItems()');
+    this.groupsManager.groupSelectedItems();
+  }
+
+
+  ungroupSelectedItems() {
+
   }
 
 
@@ -215,12 +232,6 @@ export class Map extends Component {
     else {
       mapItem.update();
     }
-  }
-
-
-  canBoxSelect(event) {
-    log4('Map::canBoxSelect(), event:', event);
-    return this.app.keyboard.get('SHIFT').isDown;
   }
 
 

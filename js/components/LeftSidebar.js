@@ -119,7 +119,7 @@ export class LeftSidebar extends Component {
    * Render component inner HTML
    */
   render() {
-    const label = document.createElement('label');
+    const label = document.createElement('h3');
     label.innerHTML = 'Left Sidebar';
     const listbox = document.createElement('div');
     listbox.id = 'left-listbox';
