@@ -25,31 +25,27 @@ h3 {
 
 .stand { opacity: 0.8; }
 
-.draggable {
-  cursor: move; /* fallback if grab cursor is unsupported */
-  cursor: grab;
-  cursor: -moz-grab;
-  cursor: -webkit-grab;
-}
-
-.draggable > label {
-  pointer-events: none;
-}
-
 .dragging {
   cursor: grabbing;
   cursor: -moz-grabbing;
   cursor: -webkit-grabbing;
 }
 
-.dropzone { position: relative; }
+.draggable {
+  cursor: move; /* fallback if grab cursor is unsupported */
+  cursor: grab;
+}
 
+.draggable > * {
+  pointer-events: none;
+}
+
+.dropzone { position: relative; }
 
 #app {
   background-color: cadetblue;
   position: relative;
 }
-
 
 #left-sidebar { background-color: purple; }
 
@@ -91,14 +87,17 @@ h3 {
   position: absolute;
 }
 
-#map .selected {
-  border: 1px dotted white;
-}
 
 #map .group {
   border: 1px dashed yellow;
   position: absolute;
 }
+
+
+#map .selected {
+  border: 1px dotted white;
+}
+
 
 #zoom-controls {
   position: absolute;

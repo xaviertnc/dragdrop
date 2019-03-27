@@ -23,7 +23,7 @@ export class Group {
   constructor(id, options = {}) {
     this.id = id;
     this.items = options.items || [];
-    this.isMetaGroup = options.isMetaGroup;
+    this.isMetaGroup = options.isMetaGroup || false;
     if ( ! this.isMetaGroup && this.items.length) {
       const thisGroup = this;
       this.items.forEach(function(item) { item.group = thisGroup; });

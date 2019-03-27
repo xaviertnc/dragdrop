@@ -7,6 +7,7 @@
 
 import { Plugin } from '../classes/Plugin.js';
 
+const log  = window.__DEBUG_LEVEL__ ? console.log : function(){};
 const log2 = window.__DEBUG_LEVEL__ === 2 ? console.log : function(){};
 const log3 = window.__DEBUG_LEVEL__ > 2 ? console.log : function(){};
 const log4 = window.__DEBUG_LEVEL__ > 3 ? console.log : function(){};
@@ -115,10 +116,14 @@ export class Draggable extends Plugin {
     // the element has NO children!
     const drgObj = this.hostObj;
     const dragImageScale = options.scale || this._getDragImageScale();
-    const dragImageElementStyle = options.style || 'position:absolute;left:-99999px';
+    const dragImageElementStyle = options.style || 'position:absolute;left:-99999px;z-index:9999';
     const dragImageElement = drgObj.el.cloneNode(true);
-    const w = drgObj.el.clientWidth * dragImageScale;
-    const h = drgObj.el.clientHeight * dragImageScale;
+    const w = drgObj.el.offsetWidth * dragImageScale;  // `offsetWidth` includes borders, margins and padding.
+    const h = drgObj.el.offsetHeight * dragImageScale; // `clientHeight` does not include borders and padding.
+    dragImageElement.id = 'dragImage';
+    dragImageElement.classList.remove('draggable');
+    dragImageElement.classList.add('dragImage');
+    dragImageElement.removeAttribute('draggable');
     dragImageElement.style = `width:${w}px;height:${h}px;` + dragImageElementStyle;
     return dragImageElement;
   }
@@ -245,6 +250,17 @@ export class Draggable extends Plugin {
   }
 
 
-  detach() {}
+  detach() {
+    log4('Draggable::detach()');
+    const hostObj = this.hostObj;
+    hostObj.el.classList.remove('draggable');
+    hostObj.el.removeAttribute('draggable');
+    hostObj.el.removeEventListener('dragend', hostObj.eventListners.onDragEnd);
+    hostObj.el.removeEventListener('drag', hostObj.eventListners.onDrag);
+    hostObj.el.removeEventListener('dragstart', hostObj.eventListners.onDragStart);
+    delete hostObj.eventListners.onDragEnd;
+    delete hostObj.eventListners.onDrag;
+    delete hostObj.eventListners.onDragStart;
+  }
 
 }

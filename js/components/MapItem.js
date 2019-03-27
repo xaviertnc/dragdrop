@@ -185,4 +185,9 @@ export class MapItem extends Component {
     mountElement.append(this.el);
   }
 
+
+  deactivate() {
+    this.removePlugin(Draggable).removePlugin(Groupable);
+  }
+
 }

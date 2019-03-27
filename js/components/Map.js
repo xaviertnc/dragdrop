@@ -65,7 +65,7 @@ export class Map extends Component {
     this.addPlugin(BoxSelect);
 
     // Add Groups Management capability
-    this.addPlugin(GroupsManager);
+    this.addPlugin(GroupsManager, { nextId: options.nextGroupId });
 
     /**
      * Current item's group id / name
@@ -157,7 +157,7 @@ export class Map extends Component {
         mapItemViewComponent = mapGroupViewComponent.addChild(MapItem, {
           viewScale     : this.scale,
           groupsManager : this.groupsManager,
-          draggable     : { canDrag: this.canDragItem.bind(this) },
+          // draggable  : { canDrag: this.canDragItem.bind(this) },
           data          : itemData
         });
 
@@ -175,7 +175,7 @@ export class Map extends Component {
 
 
     mapGroupComponents.forEach(mapGroupViewComponent => {
-      mapGroupViewComponent.getBounds();
+      mapGroupViewComponent.getGroupBounds();
       mapGroupViewComponent.normalizeChildPositions();
       mapGroupViewComponent.render();
     });
@@ -269,16 +269,21 @@ export class Map extends Component {
 
   groupSelectedItems() {
     log('Map::groupSelectedItems()');
-    const newGroup = this.groupsManager.groupSelectedItem();
-    if (newGroup) {
-      this.addMapItem({
-        data  : { type: 'Group' },
-        model : newGroup
-      });
-      this.removeChildren(newGroup);
+    const itemsCollection = this.groupsManager.groupSelectedItems();
+    if (itemsCollection) {
       this.groupsManager.clearSelection();
+      this.removeChildren(itemsCollection.items, false); // Don't "auto dismount" items!
+      const mapGroupViewComponent = this.addMapItem({
+        data  : { type: 'Group' },
+        model : itemsCollection
+      });
+      mapGroupViewComponent.getGroupBounds();
+      mapGroupViewComponent.deactivateChildItems();
+      mapGroupViewComponent.normalizeChildPositions();
+      mapGroupViewComponent.render();
+      mapGroupViewComponent.mount();
     }
-    log('Map::groupSelectedItems(), newGroup:', newGroup);
+    log('Map::groupSelectedItems(), itemsCollection:', itemsCollection);
   }
 
 

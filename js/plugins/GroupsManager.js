@@ -29,8 +29,8 @@ export class GroupsManager extends Plugin {
   constructor(hostObj, options) {
     super('groupsmanager', hostObj, options);
     this.selectedItems = new Group('selectedItems', { isMetaGroup: true });
+    this.nextId = options.nextId || 1;
     this.groups = [];
-    this.nextId = 1;
   }
 
 
@@ -61,7 +61,7 @@ export class GroupsManager extends Plugin {
 
   addGroup(groupId, options) {
     // Create a new unique group ID if `groupId` is undefined.
-    if ( ! groupId) { groupId = 'group' + this.nextId++; }
+    if ( ! groupId) { groupId = 'grp' + this.nextId++; }
     let group = this.groups.find(group => group.id === groupId);
     if ( ! group) {
       group = new Group(groupId, options);

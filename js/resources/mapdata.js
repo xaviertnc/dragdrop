@@ -2,6 +2,7 @@ export const mapdata = {
   id: 1,
   name: 'KragDag Ekspo',
   layers: [{ id: 'base', z: 0 }],
+  nextGroupId: 3,
   itemtypes: {
     Junior4x4:      { pivotx: 0, pivoty : 0, name: 'red' },
     Kos4x4:         { pivotx: 0, pivoty : 0, name: 'lightblue' },

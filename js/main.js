@@ -27,7 +27,8 @@ app.keyboard.add('SHIFT', 16, ()=>log4('SHIFT PRESSED'), ()=>log4('SHIFT RELEASE
 app.map = app.addChild(Map, {
   id    : 'map',
   el    : document.getElementById(('map')),
-  items : mapdata.items.filter(function(item){ return item.group !== 'sidebar'; })
+  items : mapdata.items.filter(function(item){ return item.group !== 'sidebar'; }),
+  nextGroupId: mapdata.nextGroupId
 });
 
 

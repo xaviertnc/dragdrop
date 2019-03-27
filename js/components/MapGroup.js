@@ -82,6 +82,11 @@ export class MapGroup extends Component {
       y: this.topLeft.y + this.height
     };
 
+    if (this.model && this.model.items) {
+      this.children = this.model.items;
+      this.children.forEach(child => child.parent = this);
+    }
+
     log('MapGroup::new()');
   }
 
@@ -92,23 +97,31 @@ export class MapGroup extends Component {
   getViewH(scale) { return this.height    * (scale || this.viewScale); }
 
 
-  setX(viewX, scale) { this.x = viewX / (scale || this.viewScale); }
-  setY(viewY, scale) { this.y = viewY / (scale || this.viewScale); }
+  setX(viewX, scale) { this.topLeft.x = viewX / (scale || this.viewScale); }
+  setY(viewY, scale) { this.topLeft.y = viewY / (scale || this.viewScale); }
 
 
-  getBounds() {
+  getGroupBounds() {
     let top = 99999;
     let left = 99999;
     let bottom = -1;
     let right = -1;
     this.model.items.forEach(function(item) {
-      if (left > item.x) { left = item.x; }
-      if (right < (item.x + item.width)) {
-        right = item.x + item.width;
+      let x, y;
+      if (item.topLeft) {
+        x = item.topLeft.x;
+        y = item.topLeft.y;
+      } else {
+        x = item.x;
+        y = item.y;
       }
-      if (top > item.y) { top = item.y; }
-      if (bottom < (item.y + item.height)) {
-        bottom = item.y + item.height;
+      if (left > x) { left = x; }
+      if (right < (x + item.width)) {
+        right = x + item.width;
+      }
+      if (top > y) { top = y; }
+      if (bottom < (y + item.height)) {
+        bottom = y + item.height;
       }
     });
     this.width = right - left;
@@ -118,13 +131,29 @@ export class MapGroup extends Component {
   }
 
 
+  deactivateChildItems() {
+    this.children.forEach(child => child.deactivate());
+  }
+
+
   normalizeChildPositions() {
     const group = this;
     this.children.forEach(function(child) {
-      child.x = child.x - group.topLeft.x;
-      child.y = child.y - group.topLeft.y;
-      child.update();
+      if (child.topLeft) {
+        child.topLeft.x = child.topLeft.x - group.topLeft.x;
+        child.topLeft.y = child.topLeft.y - group.topLeft.y;
+      }
+      else {
+        child.x = child.x - group.topLeft.x;
+        child.y = child.y - group.topLeft.y;
+      }
     });
+  }
+
+
+  getGroup() {
+    log('MapGroup::getGroup(), id:', this.id);
+    return this.data.group ? this.groupsManager.findGroup(this.data.group) : null;
   }
 
 
@@ -193,14 +222,6 @@ export class MapGroup extends Component {
   // }
 
 
-  render() {
-    log('MapGroup::render()');
-    this.el.classList.add('group');
-    this.el.innerHTML = this.id;
-    this.update();
-  }
-
-
   update(viewScale) {
     log('MapGroup::update()');
     const vx = this.getViewX(viewScale);
@@ -208,6 +229,15 @@ export class MapGroup extends Component {
     const vw = this.getViewW(viewScale);
     const vh = this.getViewH(viewScale);
     this.el.style = `left:${vx}px;top:${vy}px;;width:${vw}px;height:${vh}px;`;
+    this.children.forEach(child => child.update(viewScale || this.viewScale));
+  }
+
+
+  render() {
+    log('MapGroup::render()');
+    this.el.classList.add('group');
+    // this.el.innerHTML = this.id;
+    this.update();
   }
 
 
@@ -220,9 +250,14 @@ export class MapGroup extends Component {
 
 
   dismount() {
-    log('MapGroup::dismount()');
+    log4('MapGroup::dismount()');
     this.children.forEach(child => child.dismount());
     this.el.parentElement.removeChild(this.el);
+  }
+
+
+  deactivate() {
+    this.removePlugin(Draggable).removePlugin(Groupable);
   }
 
 }
