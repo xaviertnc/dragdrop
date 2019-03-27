@@ -92,7 +92,12 @@ h3 {
 }
 
 #map .selected {
-  border: 1px solid red;
+  border: 1px dotted white;
+}
+
+#map .group {
+  border: 1px dashed yellow;
+  position: absolute;
 }
 
 #zoom-controls {

@@ -47,7 +47,9 @@ export class Group {
     log4('Group::removeItem(), item:', item);
     const index = this.items.indexOf(item);
     if (index >= 0) {
-      this.items[index].group = null;
+      if ( ! this.isMetaGroup) {
+        delete this.items[index].group;
+      }
       this.items.splice(index, 1);
     }
     return item;
@@ -104,6 +106,9 @@ export class Group {
 
   clear() {
     log4('Group::clear()');
+    if ( ! this.isMetaGroup) {
+      this.items.forEach(function(item) { delete item.group; });
+    }
     this.items = [];
   }
 

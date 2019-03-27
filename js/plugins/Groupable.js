@@ -27,8 +27,6 @@ export class Groupable extends Plugin {
    * @param {Object} options Plugin initial configuration.
    */
   constructor(hostObj, options) {
-    hostObj.selected = false;
-    hostObj.group = hostObj.getGroup ? hostObj.getGroup() : null,
     super('groupable', hostObj, options);
   }
 
@@ -51,6 +49,8 @@ export class Groupable extends Plugin {
   attach() {
     log4('Groupable::attach()');
     const hostObj = this.hostObj;
+    hostObj.selected = false;
+    hostObj.group = hostObj.getGroup ? hostObj.getGroup() : null,
     hostObj.eventListners.onGroupableClick = this.onClick.bind(this);
     hostObj.el.addEventListener('click', hostObj.eventListners.onGroupableClick);
   }

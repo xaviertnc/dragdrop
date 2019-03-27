@@ -154,6 +154,15 @@ export class Component {
   }
 
 
+  removeChildren(childrenToRemove, dismount = true) {
+    this.children = this.children.filter(function(child) {
+      if (child.dismount && dismount) { child.dismount(); }
+      return !childrenToRemove.includes(child);
+    });
+    return childrenToRemove;
+  }
+
+
   findChild(childId) {
     const result = this.children.filter(child => child.id === childId);
     return result.length ? result[0] : null;
@@ -192,6 +201,14 @@ export class Component {
    */
   mount() {
     throw new Error('Component::mount() - Not Implemented!');
+  }
+
+
+  /**
+   * Override me
+   */
+  dismount() {
+    this.el.parentElement.removeChild(this.el);
   }
 
 

@@ -59,10 +59,25 @@ export class GroupsManager extends Plugin {
   }
 
 
+  addGroup(groupId, options) {
+    // Create a new unique group ID if `groupId` is undefined.
+    if ( ! groupId) { groupId = 'group' + this.nextId++; }
+    let group = this.groups.find(group => group.id === groupId);
+    if ( ! group) {
+      group = new Group(groupId, options);
+      this.groups.push(group);
+    }
+    return group;
+  }
+
+
   removeGroup(group) {
     const index = this.groups.indexOf(group);
     if (index < 0) { return; }
     this.groups.splice(index, 1);
+    // We need to run group.clear() to
+    // clear each group item's group property!
+    group.clear();
   }
 
 
@@ -72,51 +87,19 @@ export class GroupsManager extends Plugin {
   }
 
 
-  groupSelectedItems(groupId) {
+  /**
+   * Groups any currently selected items into a NEW GROUP with
+   * a specified or auto-generated name / id.
+   * @param  {String} groupId
+   * @param  {Object} options
+   * @return {Group}
+   */
+  groupSelectedItems(groupId, options) {
     log('GroupsManager::groupSelectedItems(), groupId:', groupId);
-
-    // Exit if we already have a group with id == groupId.
-    if (groupId && this.findGroup(groupId)) { return; }
-
-    // Separate items with and without a group
-    // Create a list of the existing groups selected.
-    let grouplessItems = [], selectedGroups = {};
-    this.selectedItems.items.forEach(function(item) {
-      if (item.group) {
-        selectedGroups[item.group.id] = item.group;
-      } else {
-        grouplessItems.push(item);
-      }
-    });
-
-    log('GroupsManager::groupSelectedItems(), grouplessItems:', grouplessItems);
-    log('GroupsManager::groupSelectedItems(), selectedGroups:', selectedGroups);
-
-    // If we have ANY groupless items OR we have MORE THAN ONE selected group,
-    // we need to create a new group to represent the new collection.
-    if (grouplessItems.length || selectedGroups.length > 1)
-    {
-      // Create a new unique group ID
-      // if 'groupId' is undefined.
-      if ( ! groupId) {
-        groupId = 'group' + this.nextId++;
-      }
-
-      const newGroup = new Group(groupId, { items: grouplessItems });
-
-      // Add ALL the items from any selected groups, even if the selected groups
-      // have some items that are not within the selected rectangle.
-      for (let id in selectedGroups) {
-        const selectedGroup = selectedGroups[id];
-        newGroup.addItems(selectedGroup.items);
-        this.removeGroup(selectedGroup);
-      }
-
-      this.groups.push(newGroup);
-      this.clearSelection();
-
-      log('GroupsManager::groupSelectedItems(), newGroup:', newGroup);
-    }
+    if (this.selectedItems.length < 2) { return; }
+    const newGroup = this.addGroup(groupId, options);
+    newGroup.addItems(this.selectedItems.items);
+    return newGroup;
   }
 
 

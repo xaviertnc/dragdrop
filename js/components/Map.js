@@ -13,6 +13,7 @@ import { GroupsManager } from '../plugins/GroupsManager.js';
 import { Component } from '../classes/Component.js';
 
 import { MapItem   } from '../components/MapItem.js';
+import { MapGroup  } from '../components/MapGroup.js';
 
 const log  = window.__DEBUG_LEVEL__     ? console.log : function(){};
 const log3 = window.__DEBUG_LEVEL__ > 2 ? console.log : function(){};
@@ -66,10 +67,119 @@ export class Map extends Component {
     // Add Groups Management capability
     this.addPlugin(GroupsManager);
 
-    // Create and Add items as child components
-    for (let i in  options.items || []) {
-      this.addMapItem(options.items[i]);
-    }
+    /**
+     * Current item's group id / name
+     * @type {String}
+     */
+    let groupId;
+
+    /**
+     * The last map item's group id / name.
+     * Used to detect if the group id changed.
+     * @type {String}
+     */
+    let lastGroupId;
+
+    /**
+     * Holds the COLLECTION OBJECT the CURRENT ITEM belongs to.
+     * @type {Group|Class} Group instance
+     */
+    let itemsCollection;
+
+    /**
+     * Holds the GROUP VIEW COMPONENT the CURRENT ITEM belongs to.
+     * @type {MapGroup|Component}
+     */
+    let mapGroupViewComponent;
+
+    /**
+     * The CURRENT ITEM's VIEW COMPONENT.
+     * @type {MapItem|Component}
+     */
+    let mapItemViewComponent;
+
+    /**
+     * The CURRENT ITEM's STORED STATE / DATA.
+     * @type {Object}
+     */
+    let itemData;
+
+    /**
+     * A collection of all the newly add MAP GROUP COMPONENTS.
+     * @type {Array}
+     */
+    const mapGroupComponents = [];
+
+    /**
+     * ==========================
+     * ADD STORED / INITIAL ITEMS
+     * ==========================
+     * Strucutre:
+     *   - Group (Object / Groupable Objects Collection Model)
+     *   - GroupsManager (Plugin|Trait / Group Objects Collection Model)
+     *   - Map (ViewModel / Component)
+     *   - Map.el (View)
+     *   - - MapGroup (ViewModel / Component)
+     *   - - MapGroup.el (View)
+     *   - - - MapItem (ViewModel / Component)
+     *   - - - MapItem.el (View)
+     */
+    for (let i in  options.items || [])
+    {
+
+      itemData = options.items[i];
+
+      groupId = itemData.group;
+
+      // ----------
+      // GROUP ITEM
+      // ----------
+      if (groupId.length) {
+
+        // Prevent re-fetching or adding the group model and component
+        // if we are referencing the same model and component as last time.
+        if ( ! itemsCollection || groupId !== lastGroupId)
+        {
+          itemsCollection = this.groupsManager.findGroup(groupId);
+          if ( ! itemsCollection) {
+            itemsCollection = this.groupsManager.addGroup(groupId);
+            // ADD NEW MAP GROUP COMPONENT!!!
+            mapGroupViewComponent = this.addMapItem({
+              data  : { type: 'Group'},
+              model : itemsCollection
+            });
+            mapGroupComponents.push(mapGroupViewComponent);
+          }
+          lastGroupId = groupId;
+        }
+
+        // NOTE: addChild() AUTO MOUNTS the child element.
+        mapItemViewComponent = mapGroupViewComponent.addChild(MapItem, {
+          viewScale     : this.scale,
+          groupsManager : this.groupsManager,
+          draggable     : { canDrag: this.canDragItem.bind(this) },
+          data          : itemData
+        });
+
+        itemsCollection.addItem(mapItemViewComponent);
+      }
+
+      // -----------------------
+      // NO GROUP: JUST ADD ITEM
+      // -----------------------
+      else {
+        this.addMapItem({ data: itemData });
+      }
+
+    } // end: Loop through stored / initial map items.
+
+
+    mapGroupComponents.forEach(mapGroupViewComponent => {
+      mapGroupViewComponent.getBounds();
+      mapGroupViewComponent.normalizeChildPositions();
+      mapGroupViewComponent.render();
+    });
+
 
     // Build-out the HTML element
     this.render();
@@ -99,6 +209,11 @@ export class Map extends Component {
   }
 
 
+  getGroupItems() {
+    return this.children.filter(child => child.data.type === 'Group');
+  }
+
+
   zoomIn() {
     if (this.scale === 1) { this.update(2); }
     else this.update(4);
@@ -125,23 +240,45 @@ export class Map extends Component {
 
 
   /**
-   * Create a new MapItem from "mapItemData" and add as child
-   * @param {Object} mapItemData
+   * Create a new MapItem Component based on the contents of `params`
+   * @param {Object} e.g. { data: {...}, model: {...} }
+   * @return {MapItem|MapGroup|Component} The new map child component
    */
-  addMapItem(mapItemData) {
-    let options = {};
-    options.data = mapItemData;
-    options.viewScale = this.scale;
-    options.id = 'item' + mapItemData.id;
-    options.groupsManager = this.groupsManager;
-    options.draggable = { canDrag: this.canDragItem.bind(this) };
-    return this.addChild(MapItem, options);
+  addMapItem(params = {}) {
+    // ADD GROUP MAP ITEM
+    if (params.data.type === 'Group')
+    {
+      return this.addChild(MapGroup, {
+        id            : params.model.id,
+        viewScale     : this.scale,
+        groupsManager : this.groupsManager,
+        draggable     : { canDrag: this.canDragItem.bind(this) },
+        model         : params.model,
+        data          : params.data
+      });
+    }
+    // ADD GENERAL MAP ITEM
+    return this.addChild(MapItem, {
+      viewScale     : this.scale,
+      groupsManager : this.groupsManager,
+      draggable     : { canDrag: this.canDragItem.bind(this) },
+      data          : params.data
+    });
   }
 
 
   groupSelectedItems() {
     log('Map::groupSelectedItems()');
-    this.groupsManager.groupSelectedItems();
+    const newGroup = this.groupsManager.groupSelectedItem();
+    if (newGroup) {
+      this.addMapItem({
+        data  : { type: 'Group' },
+        model : newGroup
+      });
+      this.removeChildren(newGroup);
+      this.groupsManager.clearSelection();
+    }
+    log('Map::groupSelectedItems(), newGroup:', newGroup);
   }
 
 
@@ -155,10 +292,7 @@ export class Map extends Component {
    */
   render() {
     this.el.style = `width:${this.getWidth()}px;height:${this.getHeight()}px`;
-    for (let i=0; i < this.children.length; i++) {
-      let child = this.children[i];
-      child.mount();
-    }
+    this.children.forEach(child => child.mount());
     log4('Map::render(), el:', this.el);
   }
 
@@ -213,8 +347,8 @@ export class Map extends Component {
     // Back it up by the offset between the drag image top-left and the drag pointer.
     // Since we are setting item DATA values, we need to also scale the x and y values
     // back to their x1 (base scale) values.
-    mapItem.setDataX(dropPos.x - itemLeftOffset, this.scale);
-    mapItem.setDataY(dropPos.y - itemTopOffset, this.scale);
+    mapItem.setX(dropPos.x - itemLeftOffset, this.scale);
+    mapItem.setY(dropPos.y - itemTopOffset, this.scale);
     mapItem.viewScale = this.scale;
     if (unplaced) {
       mapItem.groupsManager = this.groupsManager;

@@ -1,7 +1,7 @@
 /**
- * MapItem.js
+ * MapGroup.js
  * @author: C. Moller <xavier.tnc@gmail.com>
- * @date: 09 Mar 2019
+ * @date: 24 Mar 2019
  *
  */
 
@@ -14,28 +14,29 @@ const log4 = window.__DEBUG_LEVEL__ > 3 ? console.log : function(){};
 
 /**
  * App Component
- * @class MapItem
- * @module MapItem
+ * @class MapGroup
+ * @module MapGroup
  */
-export class MapItem extends Component {
+export class MapGroup extends Component {
   /**
    * Component constructor.
-   * @constructs MapItem
+   * @constructs MapGroup
    * @param {Component} parent - Item parent component
    * @param {Object} options - Item options
    */
-  constructor(parent, options = {}) {
-
-    // log('MapItem::new(), parent:', parent);
-    // log('MapItem::new(), options:', options);
-
-    options.id = 'item' + options.data.id;
-
+  constructor(parent, options) {
     super(parent, options);
 
     /**
-     * Map item data
-     * @property data
+     * Map group model object.
+     * @property model
+     * @type {Object}
+     */
+    this.model = options.model || {};
+
+    /**
+     * Map group data object.
+     * @property model
      * @type {Object}
      */
     this.data = options.data || {};
@@ -66,33 +67,64 @@ export class MapItem extends Component {
       this.addPlugin(Groupable);
     }
 
-    this.x = this.data.x;
-    this.y = this.data.y;
-    this.z = this.data.z;
+    // NOTE: Defaults for debug puposes at the moment...
+    this.width = options.width || 100;
+    this.height = options.height || 100;
 
-    this.width = this.data.w;
-    this.height = this.data.h;
+    // NOTE: Defaults for debug puposes at the moment...
+    this.topLeft = {
+      x: options.x || 100,
+      y: options.y || 100
+    };
 
-    // Construct / build-out the element HTML
-    this.render();
+    this.bottomRight = {
+      x: this.topLeft.x + this.width,
+      y: this.topLeft.y + this.height
+    };
 
-    log4('MapItem::new()');
+    log('MapGroup::new()');
   }
 
 
-  getViewX(scale) { return this.x      * (scale || this.viewScale); }
-  getViewY(scale) { return this.y      * (scale || this.viewScale); }
-  getViewW(scale) { return this.width  * (scale || this.viewScale); }
-  getViewH(scale) { return this.height * (scale || this.viewScale); }
+  getViewX(scale) { return this.topLeft.x * (scale || this.viewScale); }
+  getViewY(scale) { return this.topLeft.y * (scale || this.viewScale); }
+  getViewW(scale) { return this.width     * (scale || this.viewScale); }
+  getViewH(scale) { return this.height    * (scale || this.viewScale); }
 
 
   setX(viewX, scale) { this.x = viewX / (scale || this.viewScale); }
   setY(viewY, scale) { this.y = viewY / (scale || this.viewScale); }
 
 
-  getGroup() {
-    log4('MapItem::getGroup(), this:', this);
-    return this.data.group ? this.groupsManager.findGroup(this.data.group) : null;
+  getBounds() {
+    let top = 99999;
+    let left = 99999;
+    let bottom = -1;
+    let right = -1;
+    this.model.items.forEach(function(item) {
+      if (left > item.x) { left = item.x; }
+      if (right < (item.x + item.width)) {
+        right = item.x + item.width;
+      }
+      if (top > item.y) { top = item.y; }
+      if (bottom < (item.y + item.height)) {
+        bottom = item.y + item.height;
+      }
+    });
+    this.width = right - left;
+    this.height = bottom - top;
+    this.topLeft = { y: top, x: left };
+    this.bottomRight = { y: bottom, x: right };
+  }
+
+
+  normalizeChildPositions() {
+    const group = this;
+    this.children.forEach(function(child) {
+      child.x = child.x - group.topLeft.x;
+      child.y = child.y - group.topLeft.y;
+      child.update();
+    });
   }
 
 
@@ -114,14 +146,14 @@ export class MapItem extends Component {
 
 
   onSelect(event) {
-    log4('MapItem::onSelect(),', event);
+    log4('MapGroup::onSelect(),', event);
     this.el.classList.add('selected');
     this.selected = true;
   }
 
 
   onUnselect(event) {
-    log4('MapItem::onUnselect(),', event);
+    log4('MapGroup::onUnselect(),', event);
     this.el.classList.remove('selected');
     this.selected = false;
   }
@@ -129,7 +161,7 @@ export class MapItem extends Component {
 
   onClick(event) {
     const SHIFT = this.app.keyboard.get('SHIFT');
-    log4('MapItem::onClick(), item.selected:', this.selected, ', SHIFT.isDown:', SHIFT.isDown);
+    log4('MapGroup::onClick(), item.selected:', this.selected, ', SHIFT.isDown:', SHIFT.isDown);
     if (SHIFT.isDown) {
       if (this.selected) {
         if (this.group) { this.group.unselectItems(this, event); }
@@ -144,45 +176,53 @@ export class MapItem extends Component {
   }
 
 
+  addChild(childClass, childOptions) {
+    const child = super.addChild(childClass, childOptions);
+    child.mount();
+    return child;
+  }
+
+
   // onDragStart(event) {
-  //   log('MapItem::onDragStart(), id:', this.id, ', group:', this.group);
+  //   log('MapGroup::onDragStart(), id:', this.id, ', group:', this.group);
   // }
 
 
   // onDrag(event) {
-  //   log('MapItem::onDrag(), id:', this.id, ', group:', this.group.id);
+  //   log('MapGroup::onDrag(), id:', this.id, ', group:', this.group.id);
   // }
 
 
   render() {
-    const vx = this.getViewX();
-    const vy = this.getViewY();
-    const vw = this.getViewW();
-    const vh = this.getViewH();
-    const label = document.createElement('label');
-    label.innerHTML = this.data.id;
-    label.style = `line-height:${vh}px;font-size:${Math.min(vh/2, 14)}px`;
-    this.el.classList.add('stand', this.data.type);
-    this.el.style = `left:${vx}px;top:${vy}px;width:${vw}px;height:${vh}px;`;
-    this.el.append(label);
-    return this.el;
+    log('MapGroup::render()');
+    this.el.classList.add('group');
+    this.el.innerHTML = this.id;
+    this.update();
   }
 
 
   update(viewScale) {
+    log('MapGroup::update()');
     const vx = this.getViewX(viewScale);
     const vy = this.getViewY(viewScale);
     const vw = this.getViewW(viewScale);
     const vh = this.getViewH(viewScale);
-    this.el.style = `left:${vx}px;top:${vy}px;width:${vw}px;height:${vh}px;`;
-    this.el.firstChild.style = `line-height:${vh}px;font-size:${Math.min(vh/2, 14)}px`;
+    this.el.style = `left:${vx}px;top:${vy}px;;width:${vw}px;height:${vh}px;`;
   }
 
 
   mount(mountElement) {
-    // log('MapItem::mount(), id:', this.id, ', this.parent.el:', this.parent.el);
+    log('MapGroup::mount(), id:', this.id, ', children:', this.children);
+    this.children.forEach(child => child.mount());
     mountElement = mountElement || this.parent.el;
     mountElement.append(this.el);
+  }
+
+
+  dismount() {
+    log('MapGroup::dismount()');
+    this.children.forEach(child => child.dismount());
+    this.el.parentElement.removeChild(this.el);
   }
 
 }

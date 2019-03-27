@@ -27,14 +27,14 @@ app.keyboard.add('SHIFT', 16, ()=>log4('SHIFT PRESSED'), ()=>log4('SHIFT RELEASE
 app.map = app.addChild(Map, {
   id    : 'map',
   el    : document.getElementById(('map')),
-  items : mapdata.items.filter(function(item){ return item.group === 2; })
+  items : mapdata.items.filter(function(item){ return item.group !== 'sidebar'; })
 });
 
 
 app.leftSidebar = app.addChild(LeftSidebar, {
   id    : 'left-sidebar',
   el    : document.getElementById(('left-sidebar')),
-  items : mapdata.items.filter(function(item){ return item.group === 1; })
+  items : mapdata.items.filter(function(item){ return item.group === 'sidebar'; })
 });
 
 
