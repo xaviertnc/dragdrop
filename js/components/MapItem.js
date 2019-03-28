@@ -80,14 +80,14 @@ export class MapItem extends Component {
   }
 
 
-  getViewX(scale) { return this.x      * (scale || this.viewScale); }
-  getViewY(scale) { return this.y      * (scale || this.viewScale); }
-  getViewW(scale) { return this.width  * (scale || this.viewScale); }
-  getViewH(scale) { return this.height * (scale || this.viewScale); }
+  getViewX(scale) { return Math.floor(this.x      * (scale || this.viewScale)); }
+  getViewY(scale) { return Math.floor(this.y      * (scale || this.viewScale)); }
+  getViewW(scale) { return Math.floor(this.width  * (scale || this.viewScale)); }
+  getViewH(scale) { return Math.floor(this.height * (scale || this.viewScale)); }
 
 
-  setX(viewX, scale) { this.x = viewX / (scale || this.viewScale); }
-  setY(viewY, scale) { this.y = viewY / (scale || this.viewScale); }
+  setX(viewX, scale) { this.x = Math.floor(viewX / (scale || this.viewScale)); }
+  setY(viewY, scale) { this.y = Math.floor(viewY / (scale || this.viewScale)); }
 
 
   getGroup() {
@@ -98,18 +98,24 @@ export class MapItem extends Component {
 
   /**
    * Clone, scale and style this item's DOM element to make a drag ghost/image element.
-   * @param  {Float} scale The scale of the clone relative to the original element
+   * @param  {Float} dropTargetScale The scale of the clone relative to the original element
    * @param  {String} style Additional styling to position the clone for example.
    * @return {HTMLEntity} Scaled and styled clone of this item's DOM element
    */
-  getDragImageElement(scale, style) {
-    const ew = this.el.clientWidth ? this.el.clientWidth * scale : this.getViewW();
-    const eh = this.el.clientHeight ? this.el.clientHeight * scale : this.getViewH();
-    const imageElement = this.el.cloneNode(true); // true === Deep clone
-    imageElement.style = `width:${ew}px;height:${eh}px;` + style;
+  getDragImageElement(dropTargetScale, style) {
+    const ew = this.getViewW(dropTargetScale);
+    const eh = this.getViewH(dropTargetScale);
+    const fh = Math.floor(eh - 2 * dropTargetScale);
+    const fs = Math.floor(8 + (dropTargetScale - 1) * 5);
+    const dragImageElement = this.el.cloneNode(true); // true === Deep clone
+    dragImageElement.id = 'dragImage';
+    dragImageElement.classList.remove('draggable');
+    dragImageElement.classList.add('dragImage');
+    dragImageElement.removeAttribute('draggable');
+    dragImageElement.style = `width:${ew}px;height:${eh}px;border-width:${dropTargetScale}px;` + style;
     // Scale LABEL also ...
-    imageElement.firstChild.style = `line-height:${eh}px;font-size:${Math.min(eh/2, 14)}px`;
-    return imageElement;
+    dragImageElement.firstChild.style = `line-height:${fh}px;font-size:${fs}px;`;
+    return dragImageElement;
   }
 
 
@@ -159,9 +165,11 @@ export class MapItem extends Component {
     const vy = this.getViewY();
     const vw = this.getViewW();
     const vh = this.getViewH();
+    const fh = Math.floor(vh - 2 * this.viewScale);
+    const fs = Math.floor(8 + (this.viewScale - 1) * 5);
     const label = document.createElement('label');
     label.innerHTML = this.data.id;
-    label.style = `line-height:${vh}px;font-size:${Math.min(vh/2, 14)}px`;
+    label.style = `line-height:${fh}px;font-size:${fs}px;border-width:${this.viewScale}px;`;
     this.el.classList.add('stand', this.data.type);
     this.el.style = `left:${vx}px;top:${vy}px;width:${vw}px;height:${vh}px;`;
     this.el.append(label);
@@ -174,8 +182,10 @@ export class MapItem extends Component {
     const vy = this.getViewY(viewScale);
     const vw = this.getViewW(viewScale);
     const vh = this.getViewH(viewScale);
+    const fh = Math.floor(vh - 2 * viewScale);
+    const fs = Math.floor(8 + ( viewScale - 1) * 5);
     this.el.style = `left:${vx}px;top:${vy}px;width:${vw}px;height:${vh}px;`;
-    this.el.firstChild.style = `line-height:${vh}px;font-size:${Math.min(vh/2, 14)}px`;
+    this.el.firstChild.style = `line-height:${fh}px;font-size:${fs}px;border-width:${viewScale}px;`;
   }
 
 

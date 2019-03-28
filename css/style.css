@@ -42,6 +42,22 @@ h3 {
 
 .dropzone { position: relative; }
 
+.group {
+  border: 1px dashed rgba(255, 255, 0, 0.5);
+  position: absolute;
+}
+
+.stand > label {
+  border: 1px solid transparent;
+  display: block;
+  text-align: center;
+}
+
+.group.selected,
+.stand.selected > label {
+  border: 1px dotted white;
+}
+
 #app {
   background-color: cadetblue;
   position: relative;
@@ -58,12 +74,6 @@ h3 {
   display: inline-block;
   margin: 3px;
 }
-
-.stand label {
-  display: block;
-  text-align: center;
-}
-
 
 #content {
   position: relative;
@@ -86,18 +96,6 @@ h3 {
   color: #222;
   position: absolute;
 }
-
-
-#map .group {
-  border: 1px dashed yellow;
-  position: absolute;
-}
-
-
-#map .selected {
-  border: 1px dotted white;
-}
-
 
 #zoom-controls {
   position: absolute;

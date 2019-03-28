@@ -77,9 +77,10 @@ export class LeftSidebar extends Component {
    * Dynamically calculate the scale of an unplaced item's drag image
    * @return {Float} Drag image scale based on current map and item scales.
    */
-  getItemDragImageScale() {
-    const mapItem = this.hostObj; // Draggable Plugin HOST
-    return mapItem.app.map.scale / mapItem.parent.itemsViewScale;
+  getItemDragImageRelativeScale() {
+    const mapScale = this.hostObj.app.map.scale;
+    const sidebarScale = this.hostObj.app.leftSidebar.itemsViewScale;
+    return mapScale / sidebarScale;
   }
 
 
@@ -91,9 +92,9 @@ export class LeftSidebar extends Component {
   getItemDragImageElement(options = {}) {
     const mapItem = this.hostObj; // Draggable Plugin HOST
     if ( ! mapItem.el) { return; }
-    const dragImageScale = options.scale || this._getDragImageScale();
+    const mapScale = mapItem.app.map.scale;
     const dragImageElementStyle = options.style || 'position:absolute;left:-99999px';
-    const dragImageElement = mapItem.getDragImageElement(dragImageScale, dragImageElementStyle);
+    const dragImageElement = mapItem.getDragImageElement(mapScale, dragImageElementStyle);
     return dragImageElement;
   }
 
@@ -106,7 +107,7 @@ export class LeftSidebar extends Component {
       id: 'item' + mapItemData.id,
       viewScale: this.itemsViewScale,
       draggable: { // Draggable plugin config...
-        getDragImageScale   : this.getItemDragImageScale,
+        getDragImageScale   : this.getItemDragImageRelativeScale,
         getDragImageElement : this.getItemDragImageElement
       },
       data: mapItemData

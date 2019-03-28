@@ -91,21 +91,21 @@ export class MapGroup extends Component {
   }
 
 
-  getViewX(scale) { return this.topLeft.x * (scale || this.viewScale); }
-  getViewY(scale) { return this.topLeft.y * (scale || this.viewScale); }
-  getViewW(scale) { return this.width     * (scale || this.viewScale); }
-  getViewH(scale) { return this.height    * (scale || this.viewScale); }
+  getViewX(scale) { return Math.floor(this.topLeft.x * (scale || this.viewScale)); }
+  getViewY(scale) { return Math.floor(this.topLeft.y * (scale || this.viewScale)); }
+  getViewW(scale) { return Math.floor(this.width     * (scale || this.viewScale)); }
+  getViewH(scale) { return Math.floor(this.height    * (scale || this.viewScale)); }
 
 
-  setX(viewX, scale) { this.topLeft.x = viewX / (scale || this.viewScale); }
-  setY(viewY, scale) { this.topLeft.y = viewY / (scale || this.viewScale); }
+  setX(viewX, scale) { this.topLeft.x = Math.floor(viewX / (scale || this.viewScale)); }
+  setY(viewY, scale) { this.topLeft.y = Math.floor(viewY / (scale || this.viewScale)); }
 
 
   getGroupBounds() {
     let top = 99999;
     let left = 99999;
-    let bottom = -1;
-    let right = -1;
+    let bottom = -9999;
+    let right = -9999;
     this.model.items.forEach(function(item) {
       let x, y;
       if (item.topLeft) {
@@ -140,12 +140,12 @@ export class MapGroup extends Component {
     const group = this;
     this.children.forEach(function(child) {
       if (child.topLeft) {
-        child.topLeft.x = child.topLeft.x - group.topLeft.x;
-        child.topLeft.y = child.topLeft.y - group.topLeft.y;
+        child.topLeft.x = child.topLeft.x - group.topLeft.x - 1;
+        child.topLeft.y = child.topLeft.y - group.topLeft.y - 1;
       }
       else {
-        child.x = child.x - group.topLeft.x;
-        child.y = child.y - group.topLeft.y;
+        child.x = child.x - group.topLeft.x - 1;
+        child.y = child.y - group.topLeft.y - 1;
       }
     });
   }
@@ -159,18 +159,20 @@ export class MapGroup extends Component {
 
   /**
    * Clone, scale and style this item's DOM element to make a drag ghost/image element.
-   * @param  {Float} scale The scale of the clone relative to the original element
+   * @param  {Float} dropTargetScale The scale of the clone relative to the original element
    * @param  {String} style Additional styling to position the clone for example.
    * @return {HTMLEntity} Scaled and styled clone of this item's DOM element
    */
-  getDragImageElement(scale, style) {
-    const ew = this.el.clientWidth ? this.el.clientWidth * scale : this.getViewW();
-    const eh = this.el.clientHeight ? this.el.clientHeight * scale : this.getViewH();
-    const imageElement = this.el.cloneNode(true); // true === Deep clone
-    imageElement.style = `width:${ew}px;height:${eh}px;` + style;
-    // Scale LABEL also ...
-    imageElement.firstChild.style = `line-height:${eh}px;font-size:${Math.min(eh/2, 14)}px`;
-    return imageElement;
+  getDragImageElement(dropTargetScale, style) {
+    const ew = this.getViewW(dropTargetScale);
+    const eh = this.getViewH(dropTargetScale);
+    const dragImageElement = this.el.cloneNode(true); // true === Deep clone
+    dragImageElement.id = 'dragImage';
+    dragImageElement.classList.remove('draggable');
+    dragImageElement.classList.add('dragImage');
+    dragImageElement.removeAttribute('draggable');
+    dragImageElement.style = `width:${ew}px;height:${eh}px;border-width:${dropTargetScale}px;` + style;
+    return dragImageElement;
   }
 
 
@@ -228,7 +230,7 @@ export class MapGroup extends Component {
     const vy = this.getViewY(viewScale);
     const vw = this.getViewW(viewScale);
     const vh = this.getViewH(viewScale);
-    this.el.style = `left:${vx}px;top:${vy}px;;width:${vw}px;height:${vh}px;`;
+    this.el.style = `left:${vx}px;top:${vy}px;width:${vw}px;height:${vh}px;border-width:${viewScale || this.viewScale}px;`;
     this.children.forEach(child => child.update(viewScale || this.viewScale));
   }
 

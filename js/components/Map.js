@@ -204,8 +204,23 @@ export class Map extends Component {
    * elements on this map.
    * @return {Float} Drag image scale
    */
-  getItemDragImageScale() {
+  getItemDragImageRelativeScale() {
     return 1;
+  }
+
+
+  /**
+   * Clone, scale and style a mapItem's DOM element to make a drag ghost/image element.
+   * @param  {Object} options E.g { scale: 0.5, style: 'color:red' }
+   * @return {HTMLEntity} A scaled and styled clone of the mapItem's DOM element
+   */
+  getItemDragImageElement(options = {}) {
+    const mapItem = this.hostObj; // Draggable Plugin HOST
+    if ( ! mapItem.el) { return; }
+    const mapScale = mapItem.app.map.scale;
+    const dragImageElementStyle = options.style || 'position:absolute;left:-99999px';
+    const dragImageElement = mapItem.getDragImageElement(mapScale, dragImageElementStyle);
+    return dragImageElement;
   }
 
 
@@ -252,7 +267,11 @@ export class Map extends Component {
         id            : params.model.id,
         viewScale     : this.scale,
         groupsManager : this.groupsManager,
-        draggable     : { canDrag: this.canDragItem.bind(this) },
+        draggable     : {
+          getDragImageScale   : this.getItemDragImageRelativeScale,
+          getDragImageElement : this.getItemDragImageElement,
+          canDrag             : this.canDragItem.bind(this)
+        },
         model         : params.model,
         data          : params.data
       });
@@ -261,7 +280,11 @@ export class Map extends Component {
     return this.addChild(MapItem, {
       viewScale     : this.scale,
       groupsManager : this.groupsManager,
-      draggable     : { canDrag: this.canDragItem.bind(this) },
+      draggable     : {
+        getDragImageScale   : this.getItemDragImageRelativeScale,
+        getDragImageElement : this.getItemDragImageElement,
+        canDrag             : this.canDragItem.bind(this)
+      },
       data          : params.data
     });
   }
@@ -359,17 +382,17 @@ export class Map extends Component {
       mapItem.groupsManager = this.groupsManager;
       mapItem.addPlugin(Groupable);
       mapItem.findPlugin('draggable').reconfigure({
-        getDragImageScale: this.getItemDragImageScale,
+        getDragImageScale: this.getItemDragImageRelativeScale,
         canDrag: this.canDragItem.bind(this)
       });
       mapItem.parent.removeChild(mapItem);
       mapItem.parent = this;
       this.children.push(mapItem);
-      mapItem.update();
+      mapItem.update(this.scale);
       mapItem.mount();
     }
     else {
-      mapItem.update();
+      mapItem.update(this.scale);
     }
   }
 
