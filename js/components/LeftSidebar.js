@@ -8,6 +8,7 @@
 import { Component } from '../classes/Component.js';
 import { MapItem } from '../components/MapItem.js';
 
+const log  = window.__DEBUG_LEVEL__     ? console.log : function(){};
 const log4 = window.__DEBUG_LEVEL__ > 3 ? console.log : function(){};
 const log5 = window.__DEBUG_LEVEL__ > 4 ? console.log : function(){};
 
@@ -27,7 +28,7 @@ export class LeftSidebar extends Component {
      * @property itemsViewScale
      * @type {Float}
      */
-    this.itemsViewScale = options.itemsViewScale || 1.67;
+    this.itemsViewScale = options.itemsViewScale || 2;
 
     /**
      * This component's root/application component
@@ -40,7 +41,7 @@ export class LeftSidebar extends Component {
     let type = 'Maker4x4';
     const items = options.items || [];
     const types = ['Junior4x4', 'Kos4x4', 'Snuffel4x4', 'Opvoedkunde4x4', 'Tema4x4', 'Maker4x4'];
-    for (let i=18; i<380; i++) {
+    for (let i=21; i<380; i++) {
       if (Math.random() > 0.96) {
         type = types[Math.floor(Math.random() * 6)];
       }
@@ -73,29 +74,28 @@ export class LeftSidebar extends Component {
   }
 
 
-  /**
-   * Dynamically calculate the scale of an unplaced item's drag image
-   * @return {Float} Drag image scale based on current map and item scales.
-   */
-  getItemDragImageRelativeScale() {
-    const mapScale = this.hostObj.app.map.scale;
-    const sidebarScale = this.hostObj.app.leftSidebar.itemsViewScale;
-    return mapScale / sidebarScale;
+  getItemDragImageScale() {
+    const mapItem = this;
+    const itemScale = mapItem.app.map.viewScale;
+    // log('LeftSidebar::getItemDragImageScale(),', itemScale);
+    return itemScale;
   }
 
 
   /**
-   * Clone, scale and style a mapItem's DOM element to make a drag ghost/image element.
-   * @param  {Object} options E.g { scale: 0.5, style: 'color:red' }
-   * @return {HTMLEntity} A scaled and styled clone of the mapItem's DOM element
+   * Dynamically calculate the ratio between the size of the drag image
+   * and the actual HTML element size.
+   * @return {Float} Drag image scale based on current map and item scales.
    */
-  getItemDragImageElement(options = {}) {
-    const mapItem = this.hostObj; // Draggable Plugin HOST
-    if ( ! mapItem.el) { return; }
-    const mapScale = mapItem.app.map.scale;
-    const dragImageElementStyle = options.style || 'position:absolute;left:-99999px';
-    const dragImageElement = mapItem.getDragImageElement(mapScale, dragImageElementStyle);
-    return dragImageElement;
+  getItemDragImageRelativeSize() {
+    const mapItem = this;
+    const mapScale = mapItem.app.map.viewScale;
+    const sidebarScale = mapItem.app.leftSidebar.itemsViewScale;
+    // log('LeftSidebar::getItemDragImageRelativeSize(), mapScale:', mapScale);
+    // log('LeftSidebar::getItemDragImageRelativeSize(), sidebarScale:', sidebarScale);
+    const relSize = mapScale / sidebarScale;
+    // log('LeftSidebar::getItemDragImageRelativeSize(),', relSize);
+    return relSize;
   }
 
 
@@ -104,12 +104,10 @@ export class LeftSidebar extends Component {
    */
   addMapItem(mapItemData) {
     const itemOptions = {
-      id: 'item' + mapItemData.id,
+      draggable: true,
+      getDragImageScale : this.getItemDragImageScale,
+      getDragImageRelativeSize : this.getItemDragImageRelativeSize,
       viewScale: this.itemsViewScale,
-      draggable: { // Draggable plugin config...
-        getDragImageScale   : this.getItemDragImageRelativeScale,
-        getDragImageElement : this.getItemDragImageElement
-      },
       data: mapItemData
     };
     this.addChild(MapItem, itemOptions);

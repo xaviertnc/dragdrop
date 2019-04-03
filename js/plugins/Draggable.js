@@ -33,99 +33,20 @@ export class Draggable extends Plugin {
    * Configure plugin with custom options
    * @param {Object} options Plugin custom configuration.
    */
-  init(options) {
-    /**
-     * Scale of the drag "ghost image" relative
-     * to the actual drag element.
-     * @property dragImageScale
-     * @type {Float}
-     */
-    this.dragImageScale = options.dragImageScale || 1;
+  init() { /* Do nothing */ }
 
-    /**
-     * Custom / dynamic ghost image scale function.
-     * @method getDragImageScale
-     * @return {Float} Ghost image scale relative to the drag element size.
-     */
-    this.getDragImageScale = options.getDragImageScale;
 
-    /**
-     * Custom / dynamic ghost image element generator function.
-     * @method getDragImageElement
-     * @return {HTMLEntity} Drag ghost image element.
-     */
-    this.getDragImageElement = options.getDragImageElement;
-
-    /**
-     * Confirms that we want to create a drag "ghost" image
-     * everytime we drag.
-     * @property useCustomDragImage
-     * @type {Boolean}
-     */
-    this.useCustomDragImage = options.useCustomDragImage
-      || this.getDragImageElement
-      || this.dragImageScale;
-
-    /**
-     * Dynamic "Can Drag" function.
-     * @property canDrag
-     * @type {Function}
-     */
-    this.canDrag = options.canDrag;
+  getDragObjId(drgObj) {
+    return drgObj.getDragObjId
+      ? drgObj.getDragObjId()
+      : drgObj.id;
   }
 
 
-  _getDragObjId(drgObj) {
-    return this.getDragObjId ? this.getDragObjId(drgObj) : drgObj.id;
-  }
-
-
-  _getDragObjData(drgObj) {
-    return this.getDragObjData ? this.getDragObjData(drgObj) : drgObj.data;
-  }
-
-
-  /**
-   * Get the scale of the drag "ghost image" relative
-   * to the drag element's actual size.
-   * @private function
-   * @return {Float}
-   */
-  _getDragImageScale() {
-    return this.getDragImageScale ? this.getDragImageScale() : this.dragImageScale;
-  }
-
-
-  /**
-   * Get the element to use as template for the drag image
-   * ...scaled correctly and positioned out of sight ...
-   * @param  {Object} options e.g. { scale: 0.5, style: 'color:red;' }
-   * @return {HTMLEntity} Drag image DOM element
-   */
-  _getDragImageElement(options = {}) {
-    if (this.getDragImageElement) {
-      // Providing your own drag element generator is HIGHLY recommended!
-      return this.getDragImageElement(options);
-    }
-    if ( ! this.hostObj.el) {
-      throw new Error('Draggable::_getDragImageElement(), DOM element is required!');
-    }
-    // NOTE: Pretty useless general case / fallback code follows.
-    // Since we need overly involved logic to analyse the dragged element's structure
-    // and come up with a decently scaled clone, we will keep it simple and assume that
-    // the element has NO children!
-    const drgObj = this.hostObj;
-    const dragImageScale = options.scale || this._getDragImageScale();
-    const dragImageElementStyle = options.style || 'position:absolute;left:-99999px;z-index:9999';
-    const dragImageElement = drgObj.el.cloneNode(true);
-    const w = drgObj.el.offsetWidth * dragImageScale;  // `offsetWidth` includes borders, margins and padding.
-    const h = drgObj.el.offsetHeight * dragImageScale; // `clientHeight` does not include borders and padding.
-    dragImageElement.id = 'dragImage';
-    dragImageElement.classList.remove('draggable');
-    dragImageElement.classList.add('dragImage');
-    dragImageElement.removeAttribute('draggable');
-    dragImageElement.style = `width:${w}px;height:${h}px;` + dragImageElementStyle;
-    return dragImageElement;
+  getDragObjData(drgObj) {
+    return drgObj.getDragObjData
+      ? drgObj.getDragObjData()
+      : drgObj.data;
   }
 
 
@@ -185,38 +106,72 @@ export class Draggable extends Plugin {
   onDragStart(event) {
     log2('Draggable.onDragStart(),', event);
     const drgObj = this.hostObj;
-    if (this.canDrag && !this.canDrag(event)) { return; }
-    const dragObjId = this._getDragObjId(drgObj);
-    const dragObjData = this._getDragObjData(drgObj);
-    const dragImageScale = this._getDragImageScale();
+
+    if (drgObj.canDrag && !drgObj.canDrag(event)) {
+      return; // Exit if we're not allowed to drag.
+    }
+
+    const dragObjId = this.getDragObjId(drgObj);
+    const dragObjData = this.getDragObjData(drgObj);
     const dragStartGlobalPos = this.getEventGlobalPos(event);
     const dragElementGlobalPos = this.getElementGlobalPos(drgObj.el);
+
     const dragPointerOffset = {
       x : (dragStartGlobalPos.x - dragElementGlobalPos.x),
       y : (dragStartGlobalPos.y - dragElementGlobalPos.y)
     };
+
+    let dragImageScale = 1;
+    let dragImageRelativeSize = 1;
+
+    if (drgObj.getDragImageScale) {
+      dragImageScale = drgObj.getDragImageScale();
+    }
+
+    if (drgObj.getDragImageRelativeSize) {
+      dragImageRelativeSize = drgObj.getDragImageRelativeSize();
+    }
+
     event.dataTransfer.setData('text', JSON.stringify({
       id: dragObjId,
       dragObjData: dragObjData,
-      pointerOffset: dragPointerOffset,
-      dragImageScale: dragImageScale
+      dragImageScale: dragImageScale,
+      dragImageRelativeSize: dragImageRelativeSize,
+      pointerOffset: dragPointerOffset
     }));
-    if (this.useCustomDragImage) {
-      const dragImageElement = this._getDragImageElement();
-      drgObj.el.append(dragImageElement); // Remove again in "onDragEnd"
+
+    // Only set a custom drag image if we need to.
+    // log('Draggable.onDragStart(), drgObj.useCustomDragImage:', drgObj.useCustomDragImage);
+    if (drgObj.useCustomDragImage)
+    {
+
+      const dragImageElement = drgObj.getDragImageElement(dragImageScale);
+
+      const dragImageOffset = {
+        x: dragPointerOffset.x * dragImageRelativeSize,
+        y: dragPointerOffset.y * dragImageRelativeSize
+      };
+
       event.dataTransfer.setDragImage(
         dragImageElement,
-        dragPointerOffset.x * dragImageScale,
-        dragPointerOffset.y * dragImageScale
+        dragImageOffset.x,
+        dragImageOffset.y
       );
+
+      drgObj.el.append(dragImageElement); // Remove again in "onDragEnd"
+
       drgObj.dragImageElement = dragImageElement;
     }
-    if (drgObj.onDragStart) { drgObj.onDragStart(event); }
-    log3('Draggable.onDragStart(), dragObjId', dragObjId);
-    log3('Draggable.onDragStart(), dragObjData', dragObjData);
-    log4('Draggable.onDragStart(), dragStartGlobalPos', dragStartGlobalPos);
-    log4('Draggable.onDragStart(), dragElementGlobalPos', dragElementGlobalPos);
-    log4('Draggable.onDragStart(), dragPointerOffset', dragPointerOffset);
+
+    if (drgObj.onDragStart) {
+      drgObj.onDragStart(event);
+    }
+
+    // log('Draggable.onDragStart(), dragObjId', dragObjId);
+    // log3('Draggable.onDragStart(), dragObjData', dragObjData);
+    // log4('Draggable.onDragStart(), dragStartGlobalPos', dragStartGlobalPos);
+    // log4('Draggable.onDragStart(), dragElementGlobalPos', dragElementGlobalPos);
+    // log('Draggable.onDragStart(), dragPointerOffset', dragPointerOffset);
   }
 
 
@@ -231,8 +186,11 @@ export class Draggable extends Plugin {
     const drgObj = this.hostObj;
     if (drgObj.dragImageElement) {
       drgObj.dragImageElement.parentElement.removeChild(drgObj.dragImageElement);
+      if (drgObj.onDragEnd) { drgObj.onDragEnd(event); }
+      delete drgObj.dragImageElement;
+    } else {
+      if (drgObj.onDragEnd) { drgObj.onDragEnd(event); }
     }
-    if (drgObj.onDragEnd) { drgObj.onDragEnd(event); }
   }
 
 
@@ -242,25 +200,27 @@ export class Draggable extends Plugin {
     drgObj.el.classList.add('draggable');
     drgObj.el.setAttribute('draggable', true);
     drgObj.eventListners.onDragStart = this.onDragStart.bind(this);
-    drgObj.eventListners.onDrag = this.onDrag.bind(this);
     drgObj.eventListners.onDragEnd = this.onDragEnd.bind(this);
+    drgObj.eventListners.onDrag = this.onDrag.bind(this);
     drgObj.el.addEventListener('dragstart', drgObj.eventListners.onDragStart);
-    drgObj.el.addEventListener('drag', drgObj.eventListners.onDrag);
     drgObj.el.addEventListener('dragend', drgObj.eventListners.onDragEnd);
+    drgObj.el.addEventListener('drag', drgObj.eventListners.onDrag);
+    drgObj.draggable = this;
   }
 
 
   detach() {
     log4('Draggable::detach()');
     const hostObj = this.hostObj;
-    hostObj.el.classList.remove('draggable');
     hostObj.el.removeAttribute('draggable');
-    hostObj.el.removeEventListener('dragend', hostObj.eventListners.onDragEnd);
+    hostObj.el.classList.remove('draggable');
     hostObj.el.removeEventListener('drag', hostObj.eventListners.onDrag);
+    hostObj.el.removeEventListener('dragend', hostObj.eventListners.onDragEnd);
     hostObj.el.removeEventListener('dragstart', hostObj.eventListners.onDragStart);
+    delete hostObj.draggable;
     delete hostObj.eventListners.onDragEnd;
-    delete hostObj.eventListners.onDrag;
     delete hostObj.eventListners.onDragStart;
+    delete hostObj.eventListners.onDrag;
   }
 
 }

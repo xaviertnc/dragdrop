@@ -25,7 +25,17 @@ export class MapGroup extends Component {
    * @param {Object} options - Item options
    */
   constructor(parent, options) {
+
+    options.id = options.model.id;
+
     super(parent, options);
+
+    /**
+     * Map group data object.
+     * @property data
+     * @type {Object}
+     */
+    this.data = options.data || {};
 
     /**
      * Map group model object.
@@ -35,15 +45,8 @@ export class MapGroup extends Component {
     this.model = options.model || {};
 
     /**
-     * Map group data object.
-     * @property model
-     * @type {Object}
-     */
-    this.data = options.data || {};
-
-    /**
      * The scale at which to display this item relative
-     * to it's normal size (defined in the *data* object).
+     * to it's normal size defined in the *data* object.
      * @property viewScale
      * @type {Float}
      */
@@ -56,9 +59,52 @@ export class MapGroup extends Component {
      */
     this.app = this.rootParent;
 
+    /**
+     * Get drag image scale.
+     * @property getDragImageScale
+     * @type {Function|undefined}
+     */
+    this.getDragImageScale = options.getDragImageScale;
+
+    /**
+     * Get drag image size relative to the item's size.
+     * @property getDragImageRelativeSize
+     * @type {Function|undefined}
+     */
+    this.getDragImageRelativeSize = options.getDragImageRelativeSize;
+
+    /**
+     * Custom / dynamic ghost image element generator function.
+     * @property getDragImageElement
+     * @type {Function}
+     */
+    this.getDragImageElement = options.getDragImageElement
+      ? options.getDragImageElement
+      : this.getDragImageElement;
+
+    /**
+     * Dynamic "Can Drag" function.
+     * @property canDrag
+     * @type {Function}
+     */
+    this.canDrag = options.canDrag
+      ? options.canDrag
+      : this.canDrag;
+
+    /**
+     * Confirms that we want to create a drag "ghost" image
+     * everytime we drag.
+     * @property useCustomDragImage
+     * @type {Boolean}
+     */
+    this.useCustomDragImage = options.useCustomDragImage
+      || (typeof options.getDragImageElement === 'function')
+      || (typeof options.getDragImageRelativeSize === 'function')
+      || (typeof options.dragImageScale !== 'undefined');
+
     // Make this item DRAGGABLE!
     if (options.draggable) {
-      this.addPlugin(Draggable, options.draggable);
+      this.addPlugin(Draggable);
     }
 
     // Make this item GROUPABLE!
@@ -87,18 +133,29 @@ export class MapGroup extends Component {
       this.children.forEach(child => child.parent = this);
     }
 
-    log('MapGroup::new()');
+    // log('MapGroup::new()');
   }
 
 
-  getViewX(scale) { return Math.floor(this.topLeft.x * (scale || this.viewScale)); }
-  getViewY(scale) { return Math.floor(this.topLeft.y * (scale || this.viewScale)); }
-  getViewW(scale) { return Math.floor(this.width     * (scale || this.viewScale)); }
-  getViewH(scale) { return Math.floor(this.height    * (scale || this.viewScale)); }
+  getViewX(scale) { return this.topLeft.x * (scale || this.viewScale); }
+  getViewY(scale) { return this.topLeft.y * (scale || this.viewScale); }
+  getViewW(scale) { return this.width     * (scale || this.viewScale); }
+  getViewH(scale) { return this.height    * (scale || this.viewScale); }
 
 
-  setX(viewX, scale) { this.topLeft.x = Math.floor(viewX / (scale || this.viewScale)); }
-  setY(viewY, scale) { this.topLeft.y = Math.floor(viewY / (scale || this.viewScale)); }
+  setX(viewX, scale) { this.topLeft.x = viewX / (scale || this.viewScale); }
+  setY(viewY, scale) { this.topLeft.y = viewY / (scale || this.viewScale); }
+
+
+  /**
+   * Called by Draggable plugin in `onDragStart` event.
+   * NOTE: Usually overriden in instance INIT options.
+   * @param  {HTMLEvent} event DragStart event
+   * @return {Boolean}  Yes / No
+   */
+  canDrag() {
+    return  true;
+  }
 
 
   getGroupBounds() {
@@ -152,26 +209,31 @@ export class MapGroup extends Component {
 
 
   getGroup() {
-    log('MapGroup::getGroup(), id:', this.id);
+    // log('MapGroup::getGroup(), id:', this.id);
     return this.data.group ? this.groupsManager.findGroup(this.data.group) : null;
   }
 
 
   /**
    * Clone, scale and style this item's DOM element to make a drag ghost/image element.
-   * @param  {Float} dropTargetScale The scale of the clone relative to the original element
-   * @param  {String} style Additional styling to position the clone for example.
+   * @param  {Float} dragElementScale The scale of the clone relative to the original element
    * @return {HTMLEntity} Scaled and styled clone of this item's DOM element
    */
-  getDragImageElement(dropTargetScale, style) {
-    const ew = this.getViewW(dropTargetScale);
-    const eh = this.getViewH(dropTargetScale);
+  getDragImageElement(dragElementScale) {
+    // log('MapGroup::getDragImageElement(), scale:', dragElementScale);
+    const ew = this.getViewW(dragElementScale);
+    const eh = this.getViewH(dragElementScale);
     const dragImageElement = this.el.cloneNode(true); // true === Deep clone
+
+    let style = `border-width:${dragElementScale}px;height:${eh}px;`;
+    style = style + `left:-99999px;position:absolute;width:${ew}px;`;
+    // log('MapGroup::getDragImageElement(), style:', style);
+
     dragImageElement.id = 'dragImage';
     dragImageElement.classList.remove('draggable');
     dragImageElement.classList.add('dragImage');
     dragImageElement.removeAttribute('draggable');
-    dragImageElement.style = `width:${ew}px;height:${eh}px;border-width:${dropTargetScale}px;` + style;
+    dragImageElement.style = style;
     return dragImageElement;
   }
 
@@ -225,7 +287,7 @@ export class MapGroup extends Component {
 
 
   update(viewScale) {
-    log('MapGroup::update()');
+    log4('MapGroup::update()');
     const vx = this.getViewX(viewScale);
     const vy = this.getViewY(viewScale);
     const vw = this.getViewW(viewScale);
@@ -236,7 +298,7 @@ export class MapGroup extends Component {
 
 
   render() {
-    log('MapGroup::render()');
+    // log('MapGroup::render()');
     this.el.classList.add('group');
     // this.el.innerHTML = this.id;
     this.update();

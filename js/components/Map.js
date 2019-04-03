@@ -32,10 +32,10 @@ export class Map extends Component {
 
     /**
      * The scale at which the background image and map content will be displayed.
-     * @property scale
+     * @property viewScale
      * @type {Float}
      */
-    this.scale = options.scale || 1;
+    this.viewScale = options.viewScale || 1;
 
     /**
      * The actual width of the image used for the map background
@@ -155,7 +155,7 @@ export class Map extends Component {
 
         // NOTE: addChild() AUTO MOUNTS the child element.
         mapItemViewComponent = mapGroupViewComponent.addChild(MapItem, {
-          viewScale     : this.scale,
+          viewScale     : this.viewScale,
           groupsManager : this.groupsManager,
           // draggable  : { canDrag: this.canDragItem.bind(this) },
           data          : itemData
@@ -188,39 +188,60 @@ export class Map extends Component {
   }
 
 
-  getWidth() {
-    return this.imageWidth * this.scale;
-  }
-
-
-  getHeight() {
-    return this.imageHeight * this.scale;
+  /**
+   * Called by Draggable plugin in `onDragStart` event
+   * @param  {HTMLEvent} event DragStart event
+   * @return {Boolean}  Yes / No
+   */
+  canDragItem(event) {
+    log4('Map::canDragItem(), event:', event);
+    const mapItem = this;
+    const canDrag = ! mapItem.app.keyboard.get('SHIFT').isDown;
+    log4('Map::canDrag(),', canDrag);
+    return canDrag;
   }
 
 
   /**
-   * Get the scale of the drag ghost/image element (relative
-   * to the size of the draggable element) when we drag
-   * elements on this map.
-   * @return {Float} Drag image scale
+   * Called by BoxSelect plugin in `onMouseDown` event
+   * @param  {HTMLEvent} event MouseDown event
+   * @return {Boolean}  Yes / No
    */
-  getItemDragImageRelativeScale() {
+  canBoxSelect(event) {
+    log4('Map::canBoxSelect(), event:', event);
+    const mapItem = this;
+    const canSelect = mapItem.app.keyboard.get('SHIFT').isDown;
+    log4('Map::canBoxSelect(),', canSelect);
+    return canSelect;
+  }
+
+
+  getItemDragImageScale() {
+    const mapItem = this;
+    const itemScale = mapItem.app.map.viewScale;
+    // log('Map::getItemDragImageScale(),', itemScale);
+    return itemScale;
+  }
+
+
+  /**
+   * Dynamically calculate the ratio between the size of the drag image
+   * and the actual HTML drag element size.
+   * @return {Float} Drag image scale based on current map and item scales.
+   */
+  getItemDragImageRelativeSize() {
+    // log('Map::getItemDragImageRelativeSize(),', 1);
     return 1;
   }
 
 
-  /**
-   * Clone, scale and style a mapItem's DOM element to make a drag ghost/image element.
-   * @param  {Object} options E.g { scale: 0.5, style: 'color:red' }
-   * @return {HTMLEntity} A scaled and styled clone of the mapItem's DOM element
-   */
-  getItemDragImageElement(options = {}) {
-    const mapItem = this.hostObj; // Draggable Plugin HOST
-    if ( ! mapItem.el) { return; }
-    const mapScale = mapItem.app.map.scale;
-    const dragImageElementStyle = options.style || 'position:absolute;left:-99999px';
-    const dragImageElement = mapItem.getDragImageElement(mapScale, dragImageElementStyle);
-    return dragImageElement;
+  getWidth() {
+    return this.imageWidth * this.viewScale;
+  }
+
+
+  getHeight() {
+    return this.imageHeight * this.viewScale;
   }
 
 
@@ -230,27 +251,14 @@ export class Map extends Component {
 
 
   zoomIn() {
-    if (this.scale === 1) { this.update(2); }
+    if (this.viewScale === 1) { this.update(2); }
     else this.update(4);
   }
 
 
   zoomOut() {
-    if (this.scale === 4) { this.update(2); }
+    if (this.viewScale === 4) { this.update(2); }
     else { this.update(1); }
-  }
-
-
-  canDragItem() {
-    const canDrag = ! this.app.keyboard.get('SHIFT').isDown;
-    log4('Map::canDrag(), ', canDrag);
-    return canDrag;
-  }
-
-
-  canBoxSelect(event) {
-    log4('Map::canBoxSelect(), event:', event);
-    return this.app.keyboard.get('SHIFT').isDown;
   }
 
 
@@ -261,32 +269,19 @@ export class Map extends Component {
    */
   addMapItem(params = {}) {
     // ADD GROUP MAP ITEM
-    if (params.data.type === 'Group')
-    {
-      return this.addChild(MapGroup, {
-        id            : params.model.id,
-        viewScale     : this.scale,
-        groupsManager : this.groupsManager,
-        draggable     : {
-          getDragImageScale   : this.getItemDragImageRelativeScale,
-          getDragImageElement : this.getItemDragImageElement,
-          canDrag             : this.canDragItem.bind(this)
-        },
-        model         : params.model,
-        data          : params.data
-      });
-    }
-    // ADD GENERAL MAP ITEM
-    return this.addChild(MapItem, {
-      viewScale     : this.scale,
-      groupsManager : this.groupsManager,
-      draggable     : {
-        getDragImageScale   : this.getItemDragImageRelativeScale,
-        getDragImageElement : this.getItemDragImageElement,
-        canDrag             : this.canDragItem.bind(this)
-      },
-      data          : params.data
-    });
+    const itemOptions = {
+      draggable                 : true,
+      canDrag                   : this.canDragItem,
+      getDragImageScale         : this.getItemDragImageScale,
+      getDragImageRelativeSize  : this.getItemDragImageRelativeSize,
+      groupsManager             : this.groupsManager,
+      viewScale                 : this.viewScale,
+      model                     : params.model,
+      data                      : params.data
+    };
+    return params.data.type === 'Group'
+      ? this.addChild(MapGroup, itemOptions)
+      : this.addChild(MapItem, itemOptions);
   }
 
 
@@ -316,7 +311,7 @@ export class Map extends Component {
 
 
   /**
-   * Render the Map inner HTML
+   * Render the Map inner HTML + Mounts child components
    */
   render() {
     this.el.style = `width:${this.getWidth()}px;height:${this.getHeight()}px`;
@@ -327,16 +322,16 @@ export class Map extends Component {
 
   /**
    * Update / redraw the Map and it's items.
-   * @param  {Float} scale Map display scale
+   * @param  {Float} viewScale Map display scale
    */
-  update(scale) {
-    log3('Map::update(), scale:', scale);
-    if (scale === this.scale) { return; }
-    this.scale = scale;
+  update(viewScale) {
+    log3('Map::update(), viewScale:', viewScale);
+    if (viewScale === this.viewScale) { return; }
+    this.viewScale = viewScale;
     this.el.style = `width:${this.getWidth()}px;height:${this.getHeight()}px`;
     for (let i=0; i < this.children.length; i++) {
       let child = this.children[i];
-      child.update(scale);
+      child.update(viewScale);
     }
   }
 
@@ -355,44 +350,45 @@ export class Map extends Component {
    * @param  {Object} dropPos Drop position on map in map local x,y
    */
   onDrop(event, dropPos) {
+    const map = this;
     const jsonString = event.dataTransfer.getData('text');
     const dragData = JSON.parse(jsonString);
     // let mapItemData = dragData.dragObjData;
-    log4('Map::onDrop(), this:', this);
+    log4('Map::onDrop(), map:', map);
     log3('Map::onDrop(), dropLocalPos:', dropPos);
     log3('Map::onDrop(), dragData:', dragData);
     // Adjust the original pointer offset to the current scale of the drag image...
-    let mapItem = this.findChild(dragData.id);
-    log4('Map::onDrop(), mapItem1:', mapItem);
+    let mapItem = map.findChild(dragData.id);
+    // log('Map::onDrop(), mapItem1:', mapItem);
     const unplaced = mapItem ? false : true;
     if (unplaced) {
-      mapItem = this.app.leftSidebar.findChild(dragData.id);
+      mapItem = map.app.leftSidebar.findChild(dragData.id);
     }
-    log4('Map::onDrop(), mapItem2:', mapItem);
-    const itemLeftOffset = dragData.pointerOffset.x * dragData.dragImageScale;
-    const itemTopOffset = dragData.pointerOffset.y * dragData.dragImageScale;
+    // log('Map::onDrop(), mapItem2:', mapItem);
+    const itemLeftOffset = dragData.pointerOffset.x * dragData.dragImageRelativeSize;
+    const itemTopOffset = dragData.pointerOffset.y * dragData.dragImageRelativeSize;
     // Place the item's top-left corner back and up from the drop position.
     // Back it up by the offset between the drag image top-left and the drag pointer.
     // Since we are setting item DATA values, we need to also scale the x and y values
     // back to their x1 (base scale) values.
-    mapItem.setX(dropPos.x - itemLeftOffset, this.scale);
-    mapItem.setY(dropPos.y - itemTopOffset, this.scale);
-    mapItem.viewScale = this.scale;
+    mapItem.setX(dropPos.x - itemLeftOffset, map.viewScale);
+    mapItem.setY(dropPos.y - itemTopOffset, map.viewScale);
+    mapItem.viewScale = map.viewScale;
+    // log('Map::onDrop(), unplaced:', unplaced);
     if (unplaced) {
-      mapItem.groupsManager = this.groupsManager;
+      mapItem.groupsManager = map.groupsManager;
       mapItem.addPlugin(Groupable);
-      mapItem.findPlugin('draggable').reconfigure({
-        getDragImageScale: this.getItemDragImageRelativeScale,
-        canDrag: this.canDragItem.bind(this)
-      });
+      mapItem.getDragImageScale = map.getItemDragImageScale;
+      mapItem.getDragImageRelativeSize = map.getItemDragImageRelativeSize;
+      mapItem.canDrag = map.canDragItem;
       mapItem.parent.removeChild(mapItem);
-      mapItem.parent = this;
-      this.children.push(mapItem);
-      mapItem.update(this.scale);
+      mapItem.parent = map;
+      map.children.push(mapItem);
+      mapItem.update(map.viewScale);
       mapItem.mount();
     }
     else {
-      mapItem.update(this.scale);
+      mapItem.update(map.viewScale);
     }
   }
 

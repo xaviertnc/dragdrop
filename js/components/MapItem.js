@@ -55,9 +55,53 @@ export class MapItem extends Component {
      */
     this.app = this.rootParent;
 
+    /**
+     * Get drag image scale.
+     * @property getDragImageScale
+     * @type {Function|undefined}
+     */
+    this.getDragImageScale = options.getDragImageScale;
+
+    /**
+     * Get drag image size relative to the item's size.
+     * @property getDragImageRelativeSize
+     * @type {Function|undefined}
+     */
+    this.getDragImageRelativeSize = options.getDragImageRelativeSize;
+
+    /**
+     * Custom / dynamic ghost image element generator function.
+     * @property getDragImageElement
+     * @type {Function}
+     */
+    this.getDragImageElement = options.getDragImageElement
+      ? options.getDragImageElement
+      : this.getDragImageElement;
+
+    /**
+     * Dynamic "Can Drag" function.
+     * @property canDrag
+     * @type {Function}
+     */
+    this.canDrag = options.canDrag
+      ? options.canDrag
+      : this.canDrag;
+
+    /**
+     * Confirms that we want to create a drag "ghost" image
+     * everytime we drag.
+     * @property useCustomDragImage
+     * @type {Boolean}
+     */
+    this.useCustomDragImage = options.useCustomDragImage
+      || (typeof options.getDragImageElement === 'function')
+      || (typeof options.getDragImageRelativeSize === 'function')
+      || (typeof options.dragImageScale !== 'undefined');
+
+
     // Make this item DRAGGABLE!
     if (options.draggable) {
-      this.addPlugin(Draggable, options.draggable);
+      this.addPlugin(Draggable);
     }
 
     // Make this item GROUPABLE!
@@ -80,14 +124,25 @@ export class MapItem extends Component {
   }
 
 
-  getViewX(scale) { return Math.floor(this.x      * (scale || this.viewScale)); }
-  getViewY(scale) { return Math.floor(this.y      * (scale || this.viewScale)); }
-  getViewW(scale) { return Math.floor(this.width  * (scale || this.viewScale)); }
-  getViewH(scale) { return Math.floor(this.height * (scale || this.viewScale)); }
+  getViewX(scale) { return this.x      * (scale || this.viewScale); }
+  getViewY(scale) { return this.y      * (scale || this.viewScale); }
+  getViewW(scale) { return this.width  * (scale || this.viewScale); }
+  getViewH(scale) { return this.height * (scale || this.viewScale); }
 
 
-  setX(viewX, scale) { this.x = Math.floor(viewX / (scale || this.viewScale)); }
-  setY(viewY, scale) { this.y = Math.floor(viewY / (scale || this.viewScale)); }
+  setX(viewX, scale) { this.x = viewX / (scale || this.viewScale); }
+  setY(viewY, scale) { this.y = viewY / (scale || this.viewScale); }
+
+
+  /**
+   * Called by Draggable plugin in `onDragStart` event
+   * NOTE: Usually overriden in instance INIT options.
+   * @param  {HTMLEvent} event DragStart event
+   * @return {Boolean}  Yes / No
+   */
+  canDrag() {
+    return  true;
+  }
 
 
   getGroup() {
@@ -98,23 +153,28 @@ export class MapItem extends Component {
 
   /**
    * Clone, scale and style this item's DOM element to make a drag ghost/image element.
-   * @param  {Float} dropTargetScale The scale of the clone relative to the original element
-   * @param  {String} style Additional styling to position the clone for example.
+   * @param  {Float} dragElementScale The scale of the clone relative to the original element
    * @return {HTMLEntity} Scaled and styled clone of this item's DOM element
    */
-  getDragImageElement(dropTargetScale, style) {
-    const ew = this.getViewW(dropTargetScale);
-    const eh = this.getViewH(dropTargetScale);
-    const fh = Math.floor(eh - 2 * dropTargetScale);
-    const fs = Math.floor(8 + (dropTargetScale - 1) * 5);
+  getDragImageElement(dragElementScale) {
+    // log('MapItem::getDragImageElement(), scale:', dragElementScale);
+
+    const ew = this.getViewW(dragElementScale);
+    const eh = this.getViewH(dragElementScale);
+    const fh = eh - 2 * dragElementScale;
+    const fs = 8 + (dragElementScale - 1) * 5;
     const dragImageElement = this.el.cloneNode(true); // true === Deep clone
+
+    let style = (this.data.type === 'Group') ? `border-width:${dragElementScale}px;` : '';
+    style = style + `height:${eh}px;left:-99999px;position:absolute;width:${ew}px;`;
+    // log('MapItem::getDragImageElement(), style:', style);
+
     dragImageElement.id = 'dragImage';
     dragImageElement.classList.remove('draggable');
     dragImageElement.classList.add('dragImage');
     dragImageElement.removeAttribute('draggable');
-    dragImageElement.style = `width:${ew}px;height:${eh}px;border-width:${dropTargetScale}px;` + style;
-    // Scale LABEL also ...
-    dragImageElement.firstChild.style = `line-height:${fh}px;font-size:${fs}px;`;
+    dragImageElement.firstChild.style = `line-height:${fh}px;font-size:${fs}px;`; // Scale the LABEL
+    dragImageElement.style = style;
     return dragImageElement;
   }
 
