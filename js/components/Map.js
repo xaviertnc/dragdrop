@@ -326,13 +326,37 @@ export class Map extends Component {
    */
   update(viewScale) {
     log3('Map::update(), viewScale:', viewScale);
+
     if (viewScale === this.viewScale) { return; }
+
+    const elScrollbox = this.el.parentElement;
+    // log('Map::update(), elScrollbox:', elScrollbox);
+
+    const sbx = {};
+    sbx.top = elScrollbox.scrollTop;
+    sbx.left = elScrollbox.scrollLeft;
+    sbx.hWidth = elScrollbox.clientWidth / 2;
+    sbx.hHeight = elScrollbox.clientHeight / 2;
+    sbx.centerOnMapX = (sbx.left + sbx.hWidth) / this.viewScale;
+    sbx.centerOnMapY = (sbx.top + sbx.hHeight) / this.viewScale;
+    sbx.newCenterX = sbx.centerOnMapX * viewScale;
+    sbx.newCenterY = sbx.centerOnMapY * viewScale;
+    sbx.newLeft = sbx.newCenterX - sbx.hWidth;
+    sbx.newTop = sbx.newCenterY - sbx.hHeight;
+    // log('Map::update(), scrollbox:', sbx);
+
     this.viewScale = viewScale;
+
     this.el.style = `width:${this.getWidth()}px;height:${this.getHeight()}px`;
     for (let i=0; i < this.children.length; i++) {
       let child = this.children[i];
       child.update(viewScale);
     }
+
+    setTimeout(function(){
+      elScrollbox.scrollLeft = sbx.newLeft;
+      elScrollbox.scrollTop = sbx.newTop;
+    });
   }
 
 
